@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1F3864">
+<title>Chandra Color Shoppee — Sales Manager</title>
+<style>
+  :root{--navy:#1F3864;--blue:#2E5496;--teal:#2E75B6;--light:#D9E1F2;--green:#2e7d32;--amber:#bf9000;--red:#c0392b;--bg:#f4f6fb;--card:#fff;--line:#e2e8f0;--muted:#64748b}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:#0f172a;padding-bottom:78px}
+  header{background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  header .brand{font-weight:800;font-size:18px}
+  header .sub{font-size:11px;opacity:.85;margin-top:2px}
+  header .role{position:absolute;right:14px;top:14px;font-size:11px;background:rgba(255,255,255,.18);padding:5px 10px;border-radius:20px;border:none;color:#fff;font-weight:600}
+  .wrap{max-width:560px;margin:0 auto;padding:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+  h2{font-size:15px;margin:0 0 10px;color:var(--navy)}
+  h3{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 8px}
+  label{display:block;font-size:12px;font-weight:600;color:#334155;margin:10px 0 4px}
+  label .req{color:var(--red)}
+  input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;background:#fff;font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(46,84,150,.12)}
+  textarea{min-height:54px;resize:vertical}
+  .row{display:flex;gap:10px}.row>div{flex:1}
+  .btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;background:var(--navy);color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-top:14px}
+  .btn:active{transform:scale(.99)}.btn.green{background:var(--green)}.btn.ghost{background:#eef2f9;color:var(--navy)}.btn.sm{padding:9px;font-size:13px;margin-top:0}
+  .kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .kpi{background:linear-gradient(135deg,#fff,#f1f5ff);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center}
+  .kpi .n{font-size:21px;font-weight:800;color:var(--navy);line-height:1}.kpi .l{font-size:10px;color:var(--muted);margin-top:5px;font-weight:600}
+  .bar-row{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px}
+  .bar-row .name{width:96px;flex:none;font-weight:600;color:#334155;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar-track{flex:1;background:#eef2f9;border-radius:6px;height:18px;overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--blue));border-radius:6px;min-width:2px}
+  .bar-val{width:78px;flex:none;text-align:right;font-weight:700;font-size:12px;color:var(--navy)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:center}
+  th{background:var(--light);color:var(--navy);font-size:11px;text-transform:uppercase}
+  td.l,th.l{text-align:left}
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+  .pill.ok{background:#dcfce7;color:#166534}.pill.warn{background:#fef3c7;color:#92400e}.pill.bad{background:#fee2e2;color:#991b1b}.pill.info{background:#dbeafe;color:#1e40af}
+  .entry{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px;cursor:pointer}
+  .entry .top{display:flex;justify-content:space-between;font-weight:700;color:var(--navy)}
+  .entry .meta{color:var(--muted);font-size:11px;margin-top:3px}
+  nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;z-index:60;box-shadow:0 -2px 10px rgba(0,0,0,.06)}
+  nav button{flex:1;border:none;background:none;padding:9px 4px 8px;font-size:10px;color:var(--muted);font-weight:600;cursor:pointer}
+  nav button.on{color:var(--navy)}nav button .ic{display:block;font-size:20px;margin-bottom:2px}
+  .hide{display:none}
+  .note{font-size:11px;color:var(--muted);line-height:1.5}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:24px;font-weight:700;font-size:14px;z-index:99;opacity:0;transition:.25s;box-shadow:0 4px 14px rgba(0,0,0,.2);max-width:90%;text-align:center}
+  .toast.show{opacity:1}.toast.err{background:var(--red)}.toast.ok{background:var(--green)}
+  .seg{display:flex;background:#eef2f9;border-radius:10px;padding:3px;margin-bottom:10px}
+  .seg button{flex:1;border:none;background:none;padding:8px;border-radius:8px;font-size:12px;font-weight:700;color:var(--muted)}
+  .seg button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .small-actions{display:flex;gap:8px;margin-top:10px}.small-actions .btn{margin-top:0}
+  .geo{display:flex;align-items:center;gap:8px;background:#f1f5ff;border:1px dashed #b9c6e6;border-radius:10px;padding:9px 11px;margin-top:6px;font-size:12px}
+  .geo.ok{background:#ecfdf3;border-color:#86efac;color:#166534}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#eef2f9;border-radius:18px;padding:5px 10px;font-size:12px;margin:4px 6px 0 0;color:var(--navy)}
+  .chip b{font-weight:700}.chip .d{color:var(--red);cursor:pointer;font-weight:800}
+  .ftc{background:#fff8e6;border:1px solid #fde68a;border-radius:10px;padding:10px;margin-top:6px}
+  .modal{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+  .modal .sheet{background:#fff;width:100%;max-width:560px;border-radius:16px 16px 0 0;padding:16px;max-height:88vh;overflow:auto}
+  .gate{font-size:11px;background:#fef3c7;color:#92400e;border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.5}
+  a.maps{color:var(--blue);font-weight:700;text-decoration:none}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand">Chandra Color Shoppee</div>
+  <div class="sub">Asian Paints Dealer · Sales Manager App</div>
+  <button class="role" id="roleBtn" onclick="toggleRole()">👤 Staff</button>
+</header>
+<div id="loginOverlay" style="position:fixed;inset:0;background:linear-gradient(135deg,#1F3864,#2E5496);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:24px">
+  <div style="font-size:24px;font-weight:800;margin-bottom:6px">Chandra Color Shoppee</div>
+  <div style="opacity:.85;font-size:13px;margin-bottom:26px">Sales Manager · how do you want to sign in?</div>
+  <button onclick="loginAs('Staff')" style="width:240px;max-width:80%;padding:15px;border:none;border-radius:12px;background:#fff;color:#1F3864;font-weight:800;font-size:16px;margin-bottom:12px;cursor:pointer">👤 Continue as Staff</button>
+  <button onclick="loginAs('Owner')" style="width:240px;max-width:80%;padding:15px;border:none;border-radius:12px;background:#f1c40f;color:#1F3864;font-weight:800;font-size:16px;cursor:pointer">👑 Owner (enter PIN)</button>
+  <div style="opacity:.7;font-size:11px;margin-top:20px">Owner mode unlocks scheme, setup, approvals &amp; financials. Default PIN 1234.</div>
+</div>
+
+<!-- PUNCH -->
+<section id="view-punch" class="wrap">
+  <div class="card">
+    <h2>🕒 Attendance</h2>
+    <div class="row"><div><label>Staff</label><select id="att_staff"></select></div><div style="display:flex;gap:8px;align-items:flex-end"><button class="btn green sm" onclick="markAtt('in')">Check in</button><button class="btn ghost sm" onclick="markAtt('out')">Check out</button></div></div>
+    <div id="attToday" class="note" style="margin-top:6px"></div>
+  </div>
+  <div class="card">
+    <h2>➕ Punch a customer</h2>
+    <p class="note">Mandatory while a lead is <b>Open</b>: phone, product, quote value & location. A site can be marked <b>Closed</b> only after a Google review and a customer video are added.</p>
+    <div class="row">
+      <div><label>Date</label><input type="date" id="f_date"></div>
+      <div><label>Staff name</label><select id="f_staff"></select></div>
+    </div>
+    <label>Activity</label>
+    <select id="f_act"><option>Walk-in</option><option>Site Visit</option><option>Quotation Given</option><option>Sale Closed</option><option>Follow-up Done</option></select>
+    <label>Lead source</label>
+    <select id="f_src"><option>Walk-in</option><option>Cold call</option><option>Social media</option><option>Owner reference</option><option>Old lead</option><option>Other</option></select>
+    <label>Converted by</label>
+    <select id="f_by"><option>Staff</option><option>Owner</option></select>
+    <div class="row">
+      <div><label>Customer name <span class="req">*</span></label><input id="f_cust" placeholder="e.g. Mr. Sharma"></div>
+      <div><label>Contact no. <span class="req">*</span></label><input id="f_phone" inputmode="tel" placeholder="98xxxxxxxx"></div>
+    </div>
+    <label>Product category <span class="req">*</span></label>
+    <select id="f_prod"></select>
+    <label>Product / shade to be used <span class="req">*</span></label>
+    <input id="f_item" placeholder="e.g. Royale Aspira / Wallpaper design code / Texture name">
+    <div class="row">
+      <div><label>Quantity <span class="req">*</span></label><input type="number" id="f_qty" inputmode="decimal" placeholder="0"></div>
+      <div><label>Unit</label><select id="f_unit"><option>Sqft</option><option>Rolls</option><option>Litres</option><option>Job</option></select></div>
+    </div>
+    <div class="row">
+      <div><label>Quote value (₹) <span class="req">*</span></label><input type="number" id="f_quote" inputmode="numeric" placeholder="0"></div>
+      <div><label>Sale value (₹)</label><input type="number" id="f_sale" inputmode="numeric" placeholder="0"></div>
+    </div>
+    <div class="row">
+      <div><label>Amount collected (₹)</label><input type="number" id="f_collected" inputmode="numeric" placeholder="0"></div>
+      <div><label>Labour paid on site (₹)</label><input type="number" id="f_labor" inputmode="numeric" placeholder="0"></div>
+    </div>
+
+    <label>Google location <span class="req">*</span></label>
+    <div class="geo" id="geoBox">
+      <span id="geoIcon">📍</span>
+      <span id="geoText" style="flex:1">Tap to capture the site location automatically</span>
+      <button class="btn ghost sm" style="width:auto" onclick="captureGeo()">Capture</button>
+    </div>
+
+    <label>Follow-ups (add as many as needed)</label>
+    <div class="ftc">
+      <div class="row">
+        <div><input type="date" id="fu_date"></div>
+        <div><input id="fu_note" placeholder="Note (e.g. call back, send sample)"></div>
+      </div>
+      <button class="btn ghost sm" onclick="addFu()">+ Add follow-up</button>
+      <div id="fuChips"></div>
+    </div>
+
+    <div class="row">
+      <div><label>Google review collected?</label><select id="f_rev"><option>N</option><option>Y</option></select></div>
+      <div><label>Status</label><select id="f_status"><option>Open</option><option>Following up</option><option>Hot lead</option><option>Closed</option><option>Lost</option></select></div>
+    </div>
+
+    <label>Customer video feedback <span class="note">(required before Closed)</span></label>
+    <input type="file" id="f_video" accept="video/*" capture="environment" onchange="onVideo(event)">
+    <div id="videoState" class="note" style="margin-top:4px"></div>
+
+    <label>Remarks</label><textarea id="f_rem" placeholder="Optional notes…"></textarea>
+    <div class="gate" id="gateMsg"></div>
+    <button class="btn green" onclick="savePunch()">✓ Save punch</button>
+  </div>
+
+  <div class="card"><h3>Your recent punches</h3><div id="recent"></div></div>
+</section>
+
+<!-- DASHBOARD -->
+<!-- LEADS -->
+<section id="view-leads" class="wrap hide">
+  <div class="card"><h2>📥 Leads from Freshsales</h2><p class="note">New leads pushed from your CRM appear here automatically. Tap “Make quote” to start a quotation pre-filled with the customer.</p><div id="leadsList"></div></div>
+</section>
+
+<!-- QUOTE -->
+<section id="view-quote" class="wrap hide">
+  <div class="card">
+    <h2>🧾 Make a quotation</h2>
+    <p class="note">Build it in seconds, preview/print as PDF, share on WhatsApp — it auto-logs as a 'Quotation Given' punch with a follow-up. No excuse for missing quotations.</p>
+    <div class="row"><div><label>Customer name <span class="req">*</span></label><input id="q_cust" placeholder="Mr. Sharma"></div><div><label>Contact</label><input id="q_phone" inputmode="tel" placeholder="98xxxxxxxx"></div></div>
+    <label>Site address</label><input id="q_addr" placeholder="Area / city">
+    <div class="row"><div><label>Consultant</label><select id="q_staff"></select></div><div><label>Quote no.</label><input id="q_no"></div></div>
+    <h3 style="margin-top:12px">Line items</h3>
+    <div id="qlines"></div>
+    <button class="btn ghost sm" onclick="addQuoteLine()">+ Add line</button>
+    <div class="row" style="margin-top:10px"><div><label>Discount %</label><input type="number" id="q_disc" value="0" oninput="calcQuote()"></div><div><label>GST %</label><input type="number" id="q_gst" value="18" oninput="calcQuote()"></div></div>
+    <div class="card" id="qtotals" style="background:#f1f5ff;margin-top:10px"></div>
+    <div class="small-actions"><button class="btn ghost sm" onclick="previewQuote()">👁 Preview / Print</button><button class="btn green sm" onclick="shareQuote()">📲 WhatsApp</button></div>
+    <button class="btn green" onclick="saveQuotePunch()">✓ Save &amp; log as quotation</button>
+  </div>
+  <input type="file" id="qvid" accept="video/*" capture="environment" class="hide" onchange="onCloseVideo(event)">
+  <div class="card"><h3>Recent quotations</h3><div id="qrecent"></div></div>
+</section>
+<section id="view-dash" class="wrap hide">
+  <div class="card"><div class="row" style="align-items:flex-end">
+    <div style="flex:2"><label>Dashboard date</label><input type="date" id="d_date" onchange="renderDash()"></div>
+    <div><button class="btn ghost sm" style="margin-top:24px" onclick="setToday()">Today</button></div>
+  </div></div>
+  <div class="card"><h2>📊 Daily snapshot</h2><div class="kpis" id="kpis"></div></div>
+  <div class="card"><h2>🎨 Sale value by product</h2><div id="byprod"></div></div>
+  <div class="card"><h2>⏰ Follow-ups due</h2><div id="fudue"></div></div>
+  <div class="card owner-only"><h2>🕒 Attendance today (Owner)</h2><div id="attDash"></div></div>
+  <div class="card owner-only" id="pnlCard"><h2>💵 Site collections &amp; labour (Owner)</h2><div id="pnl"></div></div>
+</section>
+
+<!-- TEAM -->
+<section id="view-team" class="wrap hide">
+  <div class="card">
+    <div class="seg"><button id="seg-mtd" class="on" onclick="setRange('mtd')">This month</button><button id="seg-all" onclick="setRange('all')">All time</button></div>
+    <h2>🏆 Staff leaderboard</h2><div style="overflow-x:auto"><table id="lb"></table></div>
+  </div>
+  <div class="card"><h2 id="incTitle">💰 Incentive &amp; points (this quarter)</h2>
+    <p class="note" id="incHead">Points-based booster · settled quarterly.</p>
+    <div style="overflow-x:auto"><table id="inc"></table></div>
+  </div>
+</section>
+
+<!-- TARGETS + SCHEME -->
+<section id="view-targets" class="wrap hide">
+  <div class="card"><h2>🎯 Monthly targets vs achieved</h2><div id="targets"></div></div>
+
+  <div class="card" id="schemeCard">
+    <h2>✏️ Scheme editor <span class="pill info">Owner</span></h2>
+    <p class="note">Set monthly targets, category incentive rates and activity bonuses. Saved on this device and used everywhere in the app.</p>
+    <div id="schemeEditor"></div>
+    <div class="small-actions">
+      <button class="btn green sm" onclick="saveScheme()">💾 Save scheme</button>
+      <button class="btn ghost sm" onclick="resetScheme()">↺ Reset defaults</button>
+    </div>
+  </div>
+
+  <div class="card"><h2>⚙️ Manage</h2>
+    <div class="small-actions">
+      <button class="btn ghost sm" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn ghost sm" onclick="document.getElementById('imp').click()">⬆ Import CSV</button>
+    </div>
+    <input type="file" id="imp" accept=".csv" class="hide" onchange="importCSV(event)">
+    <div class="small-actions">
+      <button class="btn ghost sm" onclick="loadDemo()">↺ Load demo data</button>
+      <button class="btn ghost sm" style="color:var(--red)" onclick="clearAll()">🗑 Clear all</button>
+    </div>
+    <button class="btn ghost sm owner-only" style="margin-top:8px" onclick="changePin()">🔒 Change owner PIN</button>
+    <p class="note" style="margin-top:12px">Data stays private on this phone. Location capture & video need the page served over HTTPS (or installed) — they may be blocked when opening the raw file directly in some browsers. Add to Home Screen for the best experience.</p>
+  </div>
+</section>
+
+<!-- SETTINGS (owner) -->
+<section id="view-settings" class="wrap hide">
+  <div class="card">
+    <h2>⚙️ Setup &amp; settings <span class="pill info">Owner</span></h2>
+    <p class="note">Store details print on quotations. The staff list feeds every dropdown across the app. Saved on this device.</p>
+    <label>Shop name</label><input id="set_name">
+    <label>Address</label><input id="set_addr">
+    <div class="row"><div><label>Phone</label><input id="set_phone"></div><div><label>GSTIN</label><input id="set_gst"></div></div>
+    <label>Google review link</label><input id="set_review" placeholder="https://g.page/r/...">
+    <label>Store location (for the site-distance check)</label><div class="geo"><span id="storeLocTxt" style="flex:1">Not set</span><button class="btn ghost sm" style="width:auto" onclick="setStoreLoc()">📍 Set to here</button></div>
+    <label>Attendance radius (metres from store)</label><input type="number" id="set_radius" placeholder="200">
+    <h3 style="margin-top:14px">Staff members</h3>
+    <div id="staffList"></div>
+    <button class="btn ghost sm" onclick="addStaffRow()">+ Add staff</button>
+    <button class="btn green" onclick="saveSettings()">💾 Save settings</button>
+    <button class="btn ghost sm" style="margin-top:8px" onclick="changePin()">🔒 Change owner PIN</button>
+  </div>
+  <div class="card">
+    <h2>✅ Mandatory fields (on / off)</h2>
+    <p class="note">Switch on the checks staff must complete. Turn any off to stop enforcing it.</p>
+    <label><input type="checkbox" id="req_phone" style="width:auto;margin-right:8px">Phone number — required while Open</label>
+    <label><input type="checkbox" id="req_item" style="width:auto;margin-right:8px">Product / shade used — required while Open</label>
+    <label><input type="checkbox" id="req_qty" style="width:auto;margin-right:8px">Quantity — required while Open</label>
+    <label><input type="checkbox" id="req_quote" style="width:auto;margin-right:8px">Quote value — required while Open</label>
+    <label><input type="checkbox" id="req_loc" style="width:auto;margin-right:8px">Location capture — required while Open</label>
+    <label><input type="checkbox" id="req_reviewClose" style="width:auto;margin-right:8px">Google review — required before Close</label>
+    <label><input type="checkbox" id="req_videoClose" style="width:auto;margin-right:8px">Customer video — required before Close</label>
+    <button class="btn green" onclick="saveSettings()">💾 Save settings</button>
+  </div>
+  <div class="card">
+    <h2>☁️ Cloud sync (Firebase)</h2>
+    <p class="note">Paste your Firebase web config to sync all devices to one database you own. Leave blank to keep data only on this phone.</p>
+    <label>Firebase config (JSON)</label><textarea id="fb_cfg" style="min-height:120px;font-family:Consolas,monospace;font-size:12px" placeholder='{ "apiKey":"...", "authDomain":"...", "projectId":"...", "appId":"..." }'></textarea>
+    <label>Shop ID (use the SAME value on every device)</label><input id="fb_shop" placeholder="default">
+    <button class="btn green" onclick="saveCloudConfig()">🔗 Save &amp; connect</button>
+    <p class="note" id="fbStatus" style="margin-top:8px">Not connected — data on this device only.</p>
+    <p class="note" style="margin-top:8px"><b>One-time setup:</b> 1) console.firebase.google.com → Add project. 2) Build → Firestore Database → Create database (Start in test mode). 3) Project settings (gear) → Your apps → Web (&lt;/&gt;) → copy the firebaseConfig → paste above. 4) Repeat on every phone with the same Shop ID. Everything then syncs live.</p>
+  </div>
+</section>
+
+<nav>
+  <button id="n-punch" class="on" onclick="show('punch')"><span class="ic">➕</span>Punch</button>
+  <button id="n-leads" onclick="show('leads')"><span class="ic">📥</span>Leads</button>
+  <button id="n-quote" onclick="show('quote')"><span class="ic">🧾</span>Quote</button>
+  <button id="n-dash" onclick="show('dash')"><span class="ic">📊</span>Dash</button>
+  <button id="n-team" onclick="show('team')"><span class="ic">🏆</span>Team</button>
+  <button id="n-targets" onclick="show('targets')"><span class="ic">🎯</span>Targets</button>
+  <button id="n-settings" class="owner-only" onclick="show('settings')"><span class="ic">⚙️</span>Setup</button>
+</nav>
+<div class="toast" id="toast"></div>
+<div id="modalHost"></div>
+
+<script>
+const KEY="ccs_entries_v2", SKEY="ccs_scheme_v1";
+const PRODUCTS=["Wallpaper","Italian Texture","Advanced Range","BHPS Service","Waterproofing"];
+const STAFF=["Ramesh","Sunita","Imran","Priya"];
+const DEFAULT_SCHEME={
+  targets:{"Wallpaper":150000,"Italian Texture":120000,"Advanced Range":200000,"BHPS Service":300000,"Waterproofing":100000},
+  rate:{"Wallpaper":1.5,"Italian Texture":1.5,"Advanced Range":1.0,"BHPS Service":2.0,"Waterproofing":1.5},
+  convM:{"Wallpaper":{"Cold call":250,"Walk-in":100,"Social media":150,"Owner reference":120,"Old lead":80,"Other":100},"Italian Texture":{"Cold call":200,"Walk-in":90,"Social media":120,"Owner reference":100,"Old lead":70,"Other":90},"Advanced Range":{"Cold call":120,"Walk-in":60,"Social media":80,"Owner reference":70,"Old lead":50,"Other":60},"BHPS Service":{"Cold call":300,"Walk-in":150,"Social media":200,"Owner reference":180,"Old lead":120,"Other":150},"Waterproofing":{"Cold call":150,"Walk-in":70,"Social media":100,"Owner reference":90,"Old lead":60,"Other":80}},
+  actpoints:{sale:15,review:5,location:3,followup:2},
+  convFlat:250,
+  pointValue:0.10,
+  rewardGoal:5000,
+  products:["Wallpaper","Italian Texture","Advanced Range","BHPS Service","Waterproofing"],
+  period:"Quarterly", reward:"Top scorer wins the quarterly booster reward"
+};
+let range="mtd", role="Staff";
+let pendingFu=[];        // follow-ups being added in the form
+let pendingVideo=null;   // File for current punch
+let pendingGeo=null;     // {lat,lng,maps}
+
+// ---- storage ----
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+function save(a){localStorage.setItem(KEY,JSON.stringify(a))}
+function getScheme(){try{return Object.assign({},DEFAULT_SCHEME,JSON.parse(localStorage.getItem(SKEY)))||DEFAULT_SCHEME}catch(e){return DEFAULT_SCHEME}}
+function getProducts(){const sc=getScheme();return (sc.products&&sc.products.length)?sc.products:PRODUCTS;}
+function getSettings(){const dr={phone:true,item:true,qty:true,quote:true,loc:true,reviewClose:true,videoClose:true};const d={shop:{name:"Chandra Color Shoppee",address:"",phone:"",gst:"",review:"",lat:"27.202222",lng:"77.942500"},staff:STAFF,req:dr};try{const s=JSON.parse(localStorage.getItem("ccs_settings"));if(!s)return d;return {shop:Object.assign({},d.shop,s.shop||{}),staff:(s.staff&&s.staff.length)?s.staff:STAFF,req:Object.assign({},dr,s.req||{})};}catch(e){return d;}}
+function reqs(){return getSettings().req||{};}
+function getStaff(){const s=getSettings();return (s.staff&&s.staff.length)?s.staff:STAFF;}
+/* ===== Firebase cloud sync ===== */
+let fbDb=null,fbReady=false;const _set=localStorage.setItem.bind(localStorage);
+const SYNC_KEYS=[KEY,SKEY,"ccs_quotes","ccs_settings","ccs_pin","ccs_att"];
+const DEFAULT_FB={apiKey:"AIzaSyALFLZCib9GzISV25bHxa3mvHL8mwFwtyQ",authDomain:"ccs-incentive-scheme.firebaseapp.com",projectId:"ccs-incentive-scheme",storageBucket:"ccs-incentive-scheme.firebasestorage.app",messagingSenderId:"377632444189",appId:"1:377632444189:web:c6fa400770568064281bf4"};
+const DEFAULT_SHOP="ccs1";
+function fbCfg(){try{const s=localStorage.getItem("ccs_fb");return s?JSON.parse(s):DEFAULT_FB;}catch(e){return DEFAULT_FB;}}
+function fbShop(){return (localStorage.getItem("ccs_shop")||DEFAULT_SHOP).toLowerCase();}
+function cloudStatus(msg,ok){const el=document.getElementById("fbStatus");if(el){el.textContent=msg;el.style.color=ok?"#166534":"#c0392b";}}
+function refreshAll(){try{fillStaffSelects();}catch(e){}try{renderRecent();}catch(e){}try{renderAttToday();}catch(e){}const vis=id=>{const el=document.getElementById(id);return el&&!el.classList.contains("hide");};try{if(vis("view-dash"))renderDash();if(vis("view-team"))renderTeam();if(vis("view-targets"))renderTargets();if(vis("view-quote"))renderQuoteRecent();if(vis("view-settings"))renderSettings();}catch(e){}}
+function mergeById(a,b){try{const A=JSON.parse(a||"[]"),B=JSON.parse(b||"[]");if(!Array.isArray(A)||!Array.isArray(B))return b;const m={};A.concat(B).forEach(x=>{if(x&&x.id!=null)m[x.id]=x;});const out=Object.keys(m).map(k=>m[k]);out.sort((x,y)=>(x.created||0)-(y.created||0));return JSON.stringify(out);}catch(e){return b||a;}}
+function pushDoc(k,v){if(!fbDb)return;fbDb.collection("ccs_"+fbShop()).doc(encodeURIComponent(k)).set({v:v,u:Date.now()}).catch(()=>{});}
+function cloudInit(){
+  const cfg=fbCfg();if(!cfg)return;
+  if(typeof firebase==="undefined"){cloudStatus("Firebase SDK not loaded (need internet). Will retry when online.",false);return;}
+  try{
+    if(!firebase.apps.length)firebase.initializeApp(cfg);
+    fbDb=firebase.firestore();
+    try{fbDb.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){}
+    if(!localStorage.setItem._patched){const np=function(k,v){_set(k,v);if(fbReady&&SYNC_KEYS.indexOf(k)>=0)pushDoc(k,v);};np._patched=true;localStorage.setItem=np;}
+    const coll="ccs_"+fbShop();
+    SYNC_KEYS.forEach(k=>{
+      const ref=fbDb.collection(coll).doc(encodeURIComponent(k));
+      ref.get().then(d=>{if(!d.exists){const lv=localStorage.getItem(k);if(lv!=null)pushDoc(k,lv);}}).catch(()=>{});
+      ref.onSnapshot(d=>{if(!d.exists)return;const v=d.data().v;if(v==null)return;if(k===KEY||k==="ccs_quotes"||k==="ccs_att"){const merged=mergeById(localStorage.getItem(k),v);if(merged!==localStorage.getItem(k)){_set(k,merged);refreshAll();}if(merged!==v){pushDoc(k,merged);}}else{if(v!==localStorage.getItem(k)){_set(k,v);refreshAll();}}},err=>cloudStatus("Sync error: "+(err.code||err.message),false));
+    });
+    fbReady=true;cloudStatus("Connected ✓ — all devices on Shop ID '"+fbShop()+"' now share data.",true);
+    fbDb.collection("ccs_"+fbShop()+"_leads").onSnapshot(s=>{const arr=[];s.forEach(x=>arr.push(x.data()));_set("ccs_leads",JSON.stringify(arr));refreshAll();},function(){});
+  }catch(e){cloudStatus("Config error: "+e.message,false);}
+}
+function saveCloudConfig(){
+  const raw=document.getElementById("fb_cfg").value.trim();const shop=(document.getElementById("fb_shop").value.trim()||"default");
+  if(!raw){localStorage.removeItem("ccs_fb");localStorage.removeItem("ccs_shop");cloudStatus("Cloud sync OFF — data stays on this device only.",false);toast("Cloud sync off","ok");return;}
+  let cfg=null;try{cfg=JSON.parse(raw);}catch(e){}
+  if(!cfg){try{const b=raw.slice(raw.indexOf("{"),raw.lastIndexOf("}")+1);cfg=(new Function("return ("+b+")"))();}catch(e2){return toast("Could not read config — paste the whole firebaseConfig { ... } block","err");}}
+  if(!cfg||!cfg.projectId)return toast("Config missing projectId — copy the full firebaseConfig block","err");
+  _set("ccs_fb",JSON.stringify(cfg));_set("ccs_shop",shop);
+  toast("Saved — connecting…","ok");cloudInit();
+}
+const SOURCES=["Cold call","Walk-in","Social media","Owner reference","Old lead","Other"];
+let editorProducts=[];
+function v(id){return +((document.getElementById(id)||{}).value||0);}
+function todayStr(){return new Date().toISOString().slice(0,10)}
+function fmt(n){return "₹"+Number(n||0).toLocaleString("en-IN")}
+function toast(m,cls){const t=document.getElementById("toast");t.className="toast show "+(cls||"");t.textContent=m;setTimeout(()=>t.className="toast",2000)}
+
+// ---- IndexedDB for videos ----
+const idb={db:null,
+ open(){return new Promise(res=>{try{const r=indexedDB.open("ccs_media",1);r.onupgradeneeded=()=>r.result.createObjectStore("videos");r.onsuccess=()=>{idb.db=r.result;res()};r.onerror=()=>res()}catch(e){res()}})},
+ put(k,b){return new Promise(res=>{if(!idb.db)return res();const t=idb.db.transaction("videos","readwrite");t.objectStore("videos").put(b,k);t.oncomplete=()=>res()})},
+ get(k){return new Promise(res=>{if(!idb.db)return res(null);const t=idb.db.transaction("videos","readonly");const q=t.objectStore("videos").get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>res(null)})}};
+
+// ---- nav ----
+function show(v){
+  ["punch","leads","quote","dash","team","targets","settings"].forEach(x=>{
+    const vw=document.getElementById("view-"+x);if(vw)vw.classList.toggle("hide",x!==v);
+    const nb=document.getElementById("n-"+x);if(nb)nb.classList.toggle("on",x===v);});
+  if(v==="dash")renderDash(); if(v==="team")renderTeam(); if(v==="targets")renderTargets(); if(v==="punch")renderRecent(); if(v==="quote"){initQuote();renderQuoteRecent();} if(v==="settings")renderSettings(); if(v==="leads")renderLeads();
+}
+function getPin(){return localStorage.getItem("ccs_pin")||"1234";}
+function changePin(){const cur=prompt("Enter current owner PIN:");if(cur!==getPin())return toast("Wrong PIN","err");const np=prompt("New PIN (digits):");if(np&&np.trim()){localStorage.setItem("ccs_pin",np.trim());toast("Owner PIN updated","ok");}}
+function applyRoleVisibility(){document.querySelectorAll(".owner-only").forEach(el=>el.style.display=(role==="Owner"?"":"none"));}
+function toggleRole(){
+  if(role==="Staff"){const p=prompt("Enter Owner PIN (default 1234):");if(p===null)return;if(p!==getPin()){toast("Wrong PIN — owner access denied","err");return;}role="Owner";}
+  else{role="Staff";}
+  document.getElementById("roleBtn").textContent=(role==="Owner"?"👑 Owner":"👤 Staff");
+  document.getElementById("schemeCard").style.display=(role==="Owner"?"block":"none");
+  applyRoleVisibility();toast(role+" mode","ok");
+  if(!document.getElementById("view-targets").classList.contains("hide"))renderTargets();
+  if(!document.getElementById("view-dash").classList.contains("hide"))renderDash();
+  if(!document.getElementById("view-quote").classList.contains("hide"))renderQuoteRecent();
+}
+function setToday(){document.getElementById("d_date").value=todayStr();renderDash()}
+function setRange(r){range=r;document.getElementById("seg-mtd").classList.toggle("on",r==="mtd");document.getElementById("seg-all").classList.toggle("on",r==="all");renderTeam()}
+
+// ---- geolocation ----
+function distM(a,b,c,d){const R=6371000,t=x=>x*Math.PI/180;const dLa=t(c-a),dLo=t(d-b);const q=Math.sin(dLa/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dLo/2)**2;return Math.round(R*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q)));}
+function captureGeo(){
+  const box=document.getElementById("geoBox"),txt=document.getElementById("geoText");
+  if(!navigator.geolocation){txt.textContent="Geolocation not supported on this device.";return}
+  txt.textContent="Locating…";
+  navigator.geolocation.getCurrentPosition(p=>{
+    const lat=p.coords.latitude.toFixed(6),lng=p.coords.longitude.toFixed(6);
+    pendingGeo={lat,lng,maps:`https://www.google.com/maps?q=${lat},${lng}`,addr:""};
+    box.classList.add("ok");document.getElementById("geoIcon").textContent="✅";
+    const sh=getSettings().shop||{};let dtxt="";
+    if(sh.lat&&sh.lng){const m=distM(+sh.lat,+sh.lng,+lat,+lng);pendingGeo.distStore=m;dtxt=" · "+(m>=1000?(m/1000).toFixed(1)+" km":m+" m")+" from store";}
+    const warn=(pendingGeo.distStore!=null&&pendingGeo.distStore<120)?`<br><b style="color:var(--red)">⚠ At/near the store — capture the actual SITE location.</b>`:"";
+    txt.innerHTML=`Location captured · <a class="maps" target="_blank" href="${pendingGeo.maps}">${lat}, ${lng}</a>${dtxt}<br><span id="geoAddr" class="note">Fetching site address…</span>${warn}`;
+    fetch("https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&lat="+lat+"&lon="+lng).then(r=>r.json()).then(j=>{const a=(j&&j.display_name)||"";pendingGeo.addr=a;const el=document.getElementById("geoAddr");if(el)el.textContent=a?("Site: "+a):"Address not found";}).catch(()=>{const el=document.getElementById("geoAddr");if(el)el.textContent="(address lookup needs internet)";});
+  },err=>{txt.textContent="Could not get location ("+err.message+"). Enable GPS / open over HTTPS.";},{enableHighAccuracy:true,timeout:10000});
+}
+function resetGeo(){pendingGeo=null;const b=document.getElementById("geoBox");b.classList.remove("ok");document.getElementById("geoIcon").textContent="📍";document.getElementById("geoText").textContent="Tap to capture the site location automatically";}
+
+// ---- follow-ups in form ----
+function addFu(){
+  const d=document.getElementById("fu_date").value,n=document.getElementById("fu_note").value.trim();
+  if(!d){toast("Pick a follow-up date","err");return}
+  pendingFu.push({date:d,note:n,done:false});
+  document.getElementById("fu_date").value="";document.getElementById("fu_note").value="";
+  renderFuChips();
+}
+function renderFuChips(){
+  document.getElementById("fuChips").innerHTML=pendingFu.map((f,i)=>`<span class="chip"><b>${f.date}</b> ${f.note||""} <span class="d" onclick="rmFu(${i})">✕</span></span>`).join("");
+}
+function rmFu(i){pendingFu.splice(i,1);renderFuChips()}
+
+// ---- video ----
+function onVideo(ev){const f=ev.target.files[0];if(!f)return;pendingVideo=f;document.getElementById("videoState").innerHTML="🎥 Video attached: "+f.name+" ("+Math.round(f.size/1024/1024*10)/10+" MB)";}
+
+// ---- save with validation ----
+function savePunch(){
+  const status=document.getElementById("f_status").value;
+  const active=["Open","Following up","Hot lead"].includes(status);
+  const e={id:"e"+Date.now(),date:document.getElementById("f_date").value||todayStr(),
+    staff:document.getElementById("f_staff").value,act:document.getElementById("f_act").value,
+    cust:document.getElementById("f_cust").value.trim(),phone:document.getElementById("f_phone").value.trim(),src:document.getElementById("f_src").value,by:document.getElementById("f_by").value,
+    prod:document.getElementById("f_prod").value,item:document.getElementById("f_item").value.trim(),
+    qty:+document.getElementById("f_qty").value||0,unit:document.getElementById("f_unit").value,
+    quote:+document.getElementById("f_quote").value||0,
+    sale:+document.getElementById("f_sale").value||0,collected:+document.getElementById("f_collected").value||0,labor:+document.getElementById("f_labor").value||0,rev:document.getElementById("f_rev").value,
+    loc:pendingGeo?"Y":"N",lat:pendingGeo?pendingGeo.lat:"",lng:pendingGeo?pendingGeo.lng:"",maps:pendingGeo?pendingGeo.maps:"",addr:pendingGeo?(pendingGeo.addr||""):"",
+    video:pendingVideo?"Y":"N",videoName:pendingVideo?pendingVideo.name:"",
+    followups:pendingFu.slice(),status:status,rem:document.getElementById("f_rem").value.trim(),created:Date.now()};
+
+  // mandatory rules
+  if(!e.cust){return toast("Customer name is required","err")}
+  if(!getAtt().some(x=>x.date===todayStr()&&x.staff===e.staff&&x.type==="in"))return toast(e.staff+" must Check in (Attendance) before punching.","err");
+  const R=reqs();
+  if(active){
+    const miss=[];
+    if(R.phone&&!e.phone)miss.push("phone");
+    if(R.item&&!e.item)miss.push("product/shade used");
+    if(R.qty&&!(e.qty>0))miss.push("quantity");
+    if(R.quote&&!(e.quote>0))miss.push("quote value");
+    if(R.loc&&!pendingGeo)miss.push("location");
+    if(miss.length)return toast("Mandatory while Open: "+miss.join(", "),"err");
+  }
+  if(status==="Closed"){
+    if(R.reviewClose&&e.rev!=="Y")return toast("Google review is mandatory before closing the site","err");
+    if(R.videoClose&&e.video!=="Y")return toast("Customer video feedback is mandatory before closing the site","err");
+  }
+  if(e.quote>0){
+    window._pendingPunch={staff:e.staff,src:e.src,by:e.by,date:e.date,phone:e.phone,cust:e.cust,prod:e.prod,item:e.item,qty:e.qty,unit:e.unit};
+    show("quote");
+    setTimeout(function(){var c=document.getElementById("q_cust");if(c)c.value=e.cust||"";var p=document.getElementById("q_phone");if(p)p.value=e.phone||"";var st=document.getElementById("q_staff");if(st)st.value=e.staff;qlines=[{prod:e.prod||getProducts()[0],desc:e.item||"",qty:e.qty||0,unit:e.unit||"Sqft",rate:(e.qty>0?Math.round(e.quote/e.qty):e.quote)||0}];renderQuoteLines();},60);
+    toast("Quote value entered — complete the quotation to log this lead","ok");
+    return;
+  }
+  const a=load();a.push(e);save(a);
+  if(pendingVideo)idb.put(e.id,pendingVideo);
+  clearForm();toast("✓ Punched!","ok");renderRecent();
+}
+function clearForm(){
+  ["f_cust","f_phone","f_item","f_qty","f_quote","f_sale","f_collected","f_labor","f_rem"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("f_rev").value="N";document.getElementById("f_status").value="Open";document.getElementById("f_src").value="Walk-in";document.getElementById("f_by").value="Staff";
+  document.getElementById("f_video").value="";document.getElementById("videoState").textContent="";
+  pendingFu=[];pendingVideo=null;resetGeo();renderFuChips();updateGate();
+}
+function updateGate(){
+  const status=document.getElementById("f_status").value;
+  const g=document.getElementById("gateMsg");
+  if(status==="Closed"){g.style.display="block";g.innerHTML="🔒 To Close: Google review = Y <b>and</b> a customer video are required.";}
+  else if(["Open","Following up","Hot lead"].includes(status)){g.style.display="block";g.innerHTML="🔒 While Open: phone, product, product/shade used, quantity, quote value & captured location are required.";}
+  else{g.style.display="none";}
+}
+
+// ---- recent + detail (add more follow-ups later) ----
+function renderRecent(){
+  const a=load().slice().reverse().slice(0,12),box=document.getElementById("recent");
+  if(!a.length){box.innerHTML='<p class="note">No punches yet. Save your first customer above.</p>';return}
+  box.innerHTML=a.map(e=>`<div class="entry" onclick="openDetail('${e.id}')">
+    <div class="top"><span>${e.cust||"—"} · ${e.act}</span><span class="note">${e.date}</span></div>
+    <div class="meta">${e.staff} · ${e.prod}${e.item?" · "+e.item:""}${e.qty?" · "+e.qty+" "+(e.unit||""):""}${e.sale?" · Sale "+fmt(e.sale):(e.quote?" · Quote "+fmt(e.quote):"")} · ${statusPill(e.status)}${e.maps?` · <a class="maps" target="_blank" href="${e.maps}" onclick="event.stopPropagation()">📍map</a>`:""}${(e.followups&&e.followups.length)?` · ⏰${e.followups.filter(f=>!f.done).length} open`:""}</div>
+  </div>`).join("");
+}
+function statusPill(s){const m={"Closed":"ok","Hot lead":"warn","Lost":"bad","Following up":"info","Open":"info"};return `<span class="pill ${m[s]||'info'}">${s}</span>`}
+
+function openDetail(id){
+  const e=load().find(x=>x.id===id);if(!e)return;
+  const fus=(e.followups||[]).map((f,i)=>`<div class="chip" style="display:flex;width:100%;justify-content:space-between"><span><b>${f.date}</b> ${f.note||""}</span><span>${f.done?'<span class="pill ok">done</span>':`<button class="btn ghost sm" style="width:auto;padding:3px 8px" onclick="markFu('${id}',${i})">mark done</button>`}</span></div>`).join("")||'<p class="note">No follow-ups yet.</p>';
+  document.getElementById("modalHost").innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="sheet">
+    <h2>${e.cust} · ${e.prod}</h2>
+    <p class="note">${e.date} · ${e.staff} · ${statusPill(e.status)} · Quote ${fmt(e.quote)}${e.sale?" · Sale "+fmt(e.sale):""}<br>
+    Product used: ${e.item||"—"}${e.qty?" · "+e.qty+" "+(e.unit||""):""} · Source: ${e.src||"—"} · Converted by: ${e.by||"Staff"}<br>
+    ${e.phone||"no phone"} ${e.maps?`· <a class="maps" target="_blank" href="${e.maps}">📍 view location</a>`:""} · Review ${e.rev} · Video ${e.video}</p>
+    <h3>Follow-ups</h3>${fus}
+    <label>Add another follow-up</label>
+    <div class="row"><div><input type="date" id="md_date"></div><div><input id="md_note" placeholder="Note"></div></div>
+    <button class="btn ghost sm" onclick="addFuTo('${id}')">+ Add follow-up</button>
+    <div class="row" style="margin-top:8px"><div><label>Update status</label><select id="md_status">
+      ${["Open","Following up","Hot lead","Closed","Lost"].map(s=>`<option ${s===e.status?"selected":""}>${s}</option>`).join("")}</select></div></div>
+    <button class="btn" onclick="updateStatus('${id}')">Save status</button>
+    <button class="btn ghost" onclick="closeModal()">Close</button>
+    <button class="btn ghost" style="color:var(--red)" onclick="delEntry('${id}')">Delete entry</button>
+  </div></div>`;
+}
+function closeModal(){document.getElementById("modalHost").innerHTML=""}
+function addFuTo(id){
+  const d=document.getElementById("md_date").value,n=document.getElementById("md_note").value.trim();
+  if(!d)return toast("Pick a date","err");
+  const a=load(),e=a.find(x=>x.id===id);e.followups=e.followups||[];e.followups.push({date:d,note:n,done:false});save(a);toast("Follow-up added","ok");openDetail(id);renderRecent();
+}
+function markFu(id,i){const a=load(),e=a.find(x=>x.id===id);e.followups[i].done=true;save(a);openDetail(id);renderRecent();renderDash();}
+function updateStatus(id){
+  const a=load(),e=a.find(x=>x.id===id),ns=document.getElementById("md_status").value;
+  const R=reqs();
+  if(ns==="Closed"){if(R.reviewClose&&e.rev!=="Y")return toast("Google review required before Closed","err");if(R.videoClose&&e.video!=="Y")return toast("Customer video required before Closed","err");}
+  if(["Open","Following up","Hot lead"].includes(ns)){const miss=[];if(R.phone&&!e.phone)miss.push("phone");if(R.quote&&!(e.quote>0))miss.push("quote value");if(R.loc&&!e.lat)miss.push("location");if(miss.length)return toast("Required while Open: "+miss.join(", "),"err");}
+  e.status=ns;save(a);toast("Status updated","ok");closeModal();renderRecent();
+}
+function delEntry(id){if(!confirm("Delete this entry?"))return;save(load().filter(x=>x.id!==id));closeModal();renderRecent();}
+
+function dayData(d){return load().filter(e=>e.date===d)}
+function monthData(){const m=todayStr().slice(0,7);return load().filter(e=>(e.date||"").slice(0,7)===m)}
+function renderDash(){
+  const d=document.getElementById("d_date").value||todayStr(),rows=dayData(d);
+  const walk=rows.filter(e=>e.act==="Walk-in").length,quotes=rows.filter(e=>e.act==="Quotation Given").length;
+  const closed=rows.filter(e=>e.act==="Sale Closed").length,saleVal=rows.reduce((s,e)=>s+(+e.sale||0),0);
+  const conv=walk?Math.round(closed/walk*100):0,revs=rows.filter(e=>e.rev==="Y").length;
+  const locs=rows.filter(e=>e.loc==="Y").length,vids=rows.filter(e=>e.video==="Y").length;
+  const k=[["Entries",rows.length],["Walk-ins",walk],["Quotes",quotes],["Sales",closed],["Sale Value",fmt(saleVal)],["Conversion",conv+"%"],["Reviews",revs],["Locations",locs],["Videos",vids]];
+  document.getElementById("kpis").innerHTML=k.map(x=>`<div class="kpi"><div class="n">${x[1]}</div><div class="l">${x[0]}</div></div>`).join("");
+  const PR=getProducts();const tot={};PR.forEach(p=>tot[p]=0);rows.forEach(e=>tot[e.prod]=(tot[e.prod]||0)+(+e.sale||0));
+  const max=Math.max(1,...Object.values(tot));
+  document.getElementById("byprod").innerHTML=PR.map(p=>`<div class="bar-row"><span class="name">${p}</span><span class="bar-track"><span class="bar-fill" style="width:${tot[p]/max*100}%"></span></span><span class="bar-val">${fmt(tot[p])}</span></div>`).join("");
+  const due=[];
+  load().forEach(e=>{(e.followups||[]).forEach(f=>{if(!f.done && f.date<=d && !["Closed","Lost"].includes(e.status))due.push({e,f})})});
+  due.sort((a,b)=>a.f.date.localeCompare(b.f.date));
+  document.getElementById("fudue").innerHTML=due.length?due.slice(0,20).map(({e,f})=>`<div class="entry" onclick="openDetail('${e.id}')"><div class="top"><span>${e.cust} · ${e.prod}</span><span class="note">${f.date}</span></div><div class="meta">${e.staff} · ${e.phone||"no phone"} · ${f.note||""} · ${statusPill(e.status)}</div></div>`).join(""):'<p class="note">No pending follow-ups. 🎉</p>';
+  const all=load();const col=all.reduce((a,e)=>a+(+e.collected||0),0),lab=all.reduce((a,e)=>a+(+e.labor||0),0);
+  const dayCol=rows.reduce((a,e)=>a+(+e.collected||0),0),dayLab=rows.reduce((a,e)=>a+(+e.labor||0),0);
+  const byc={};all.forEach(e=>{if((+e.collected||0)||(+e.labor||0)){const kk=e.cust||"—";byc[kk]=byc[kk]||{c:0,l:0};byc[kk].c+=(+e.collected||0);byc[kk].l+=(+e.labor||0);}});
+  renderAttDash();
+  const pe=document.getElementById("pnl");
+  if(pe)pe.innerHTML=`<div class="kpis"><div class="kpi"><div class="n">${fmt(dayCol)}</div><div class="l">Collected (day)</div></div><div class="kpi"><div class="n">${fmt(dayLab)}</div><div class="l">Labour (day)</div></div><div class="kpi"><div class="n">${fmt(dayCol-dayLab)}</div><div class="l">Net (day)</div></div></div><div style="overflow-x:auto"><table style="margin-top:10px"><tr><th class="l">Customer / site</th><th>Collected</th><th>Labour</th><th>Net</th></tr>${Object.keys(byc).map(kk=>`<tr><td class="l">${kk}</td><td>${fmt(byc[kk].c)}</td><td>${fmt(byc[kk].l)}</td><td><b>${fmt(byc[kk].c-byc[kk].l)}</b></td></tr>`).join("")||'<tr><td class="l" colspan="4">No collections logged yet.</td></tr>'}<tr><td class="l"><b>TOTAL (all-time)</b></td><td><b>${fmt(col)}</b></td><td><b>${fmt(lab)}</b></td><td><b>${fmt(col-lab)}</b></td></tr></table></div>`;
+}
+
+function scope(){return range==="mtd"?monthData():load()}
+function renderTeam(){
+  const data=scope(),sc=getScheme();
+  const lb=getStaff().map(s=>{const r=data.filter(e=>e.staff===s);
+    return{s,walk:r.filter(e=>e.act==="Walk-in").length,q:r.filter(e=>e.act==="Quotation Given").length,
+      c:r.filter(e=>e.act==="Sale Closed").length,v:r.reduce((a,e)=>a+(+e.sale||0),0),
+      rev:r.filter(e=>e.rev==="Y").length,conv:0};}).map(x=>{x.conv=x.walk?Math.round(x.c/x.walk*100):0;return x});
+  document.getElementById("lb").innerHTML=`<tr><th class="l">Staff</th><th>Walk</th><th>Quotes</th><th>Sales</th><th>Value</th><th>Rev</th><th>Conv</th></tr>`+
+    lb.map(x=>`<tr><td class="l"><b>${x.s}</b></td><td>${x.walk}</td><td>${x.q}</td><td>${x.c}</td><td>${fmt(x.v)}</td><td>${x.rev}</td><td>${x.conv}%</td></tr>`).join("");
+  const md=quarterData();
+  const ap=sc.actpoints||{};const cm=sc.convM||{};const flat=(sc.convFlat!=null?sc.convFlat:0);const pv=(sc.pointValue!=null?sc.pointValue:0.10);const goal=(sc.rewardGoal!=null?sc.rewardGoal:0);
+  const inc=getStaff().map(s=>{let pts=0,catCash=0;const r=md.filter(e=>e.staff===s);
+    getProducts().forEach(p=>{const val=r.filter(e=>e.prod===p).reduce((a,e)=>a+(+e.sale||0),0);catCash+=val*((sc.rate[p]||0)/100);});
+    const fudone=r.reduce((a,e)=>a+((e.followups||[]).filter(f=>f.done).length),0);
+    pts+=r.filter(e=>e.act==="Sale Closed").length*(ap.sale||0)+r.filter(e=>e.rev==="Y").length*(ap.review||0)+r.filter(e=>e.loc==="Y").length*(ap.location||0)+fudone*(ap.followup||0);
+    r.filter(e=>e.act==="Sale Closed"&&(e.by||"Staff")!=="Owner").forEach(e=>{const m=cm[e.prod]||{};pts+=(m[e.src||"Other"]||0)+flat;});
+    const ptsCash=pts*pv;const total=Math.round(catCash+ptsCash);
+    return{s,pts:Math.round(pts),ptsCash:Math.round(ptsCash),cat:Math.round(catCash),total,left:Math.max(0,Math.round(goal-ptsCash))};});
+  inc.sort((a,b)=>b.total-a.total);
+  const ih=document.getElementById("incHead");if(ih)ih.innerHTML=`Points → gift at ₹${pv.toFixed(2)}/point · Incentive = % of the sale amount · Settlement ${sc.period||"Quarterly"} (${quarterLabel()}) · Reward goal: gift ₹${goal} · Owner-converted = 0 pts for staff · ${sc.reward||""}`;
+  const t2=document.getElementById("incTitle");if(t2)t2.textContent="🏅 Incentive & points — "+quarterLabel();
+  document.getElementById("inc").innerHTML=`<tr><th class="l">Staff</th><th>Points</th><th>Gift ₹</th><th>Incentive ₹</th><th>Total ₹</th><th>Reward left ₹</th></tr>`+
+    inc.map((x,i)=>`<tr><td class="l"><b>${i===0&&x.total>0?"🥇 ":""}${x.s}</b></td><td>${x.pts}</td><td>${fmt(x.ptsCash)}</td><td>${fmt(x.cat)}</td><td><b>${fmt(x.total)}</b></td><td>${x.left>0?fmt(x.left):"✓ reached"}</td></tr>`).join("");
+}
+
+function renderTargets(){
+  const md=monthData(),sc=getScheme();
+  document.getElementById("targets").innerHTML=getProducts().map(p=>{
+    const ach=md.filter(e=>e.prod===p).reduce((a,e)=>a+(+e.sale||0),0),t=sc.targets[p]||1;
+    const real=Math.round(ach/t*100),pct=Math.min(100,real);
+    const cls=real>=100?"ok":real>=70?"warn":"bad",lbl=real>=100?"Achieved":real>=70?"On track":"Behind";
+    return `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><b>${p}</b><span>${fmt(ach)} / ${fmt(t)} <span class="pill ${cls}">${real}% ${lbl}</span></span></div><div class="bar-track" style="height:14px"><div class="bar-fill" style="width:${pct}%"></div></div></div>`;
+  }).join("");
+  document.getElementById("schemeCard").style.display=(role==="Owner"?"block":"none");
+  if(role==="Owner")renderSchemeEditor();
+}
+function renderSchemeEditor(){
+  editorProducts=getProducts().slice();
+  const sc=getScheme();const cm=sc.convM||{};
+  let h=`<h3>Products — monthly target &amp; % paid on sale</h3><div style="overflow-x:auto"><table><tr><th class="l">Product</th><th>Target ₹</th><th>Rate %</th><th></th></tr>`;
+  editorProducts.forEach((p,i)=>{h+=`<tr><td class="l"><input id="n_${i}" value="${p}" style="padding:6px;min-width:120px"></td><td><input type="number" id="t_${i}" value="${sc.targets[p]||0}" style="padding:6px;width:90px"></td><td><input type="number" step="0.1" id="r_${i}" value="${sc.rate[p]||0}" style="padding:6px;width:64px"></td><td><span style="cursor:pointer;color:var(--red);font-weight:800" onclick="delSchemeProduct(${i})">✕</span></td></tr>`;});
+  h+=`</table></div><button class="btn ghost sm" style="margin-top:8px" onclick="addSchemeProduct()">+ Add new product</button>`;
+  h+=`<h3 style="margin-top:14px">Conversion points — per product &amp; lead source (staff-converted only)</h3><div style="overflow-x:auto"><table><tr><th class="l">Product</th>`+SOURCES.map(s=>`<th>${s}</th>`).join("")+`</tr>`;
+  editorProducts.forEach((p,i)=>{const m=cm[p]||{};h+=`<tr><td class="l">${p}</td>`+SOURCES.map((s,si)=>`<td><input type="number" id="cm_${i}_${si}" value="${m[s]||0}" style="padding:6px;width:58px"></td>`).join("")+`</tr>`;});
+  h+=`</table></div>`;
+  const ap=sc.actpoints||{sale:0,review:0,location:0,followup:0};
+  h+=`<h3 style="margin-top:14px">Activity points (added for everyone)</h3><div class="row"><div><label>Sale</label><input type="number" id="ap_sale" value="${ap.sale||0}"></div><div><label>Review</label><input type="number" id="ap_review" value="${ap.review||0}"></div></div><div class="row"><div><label>Location</label><input type="number" id="ap_location" value="${ap.location||0}"></div><div><label>Follow-up</label><input type="number" id="ap_followup" value="${ap.followup||0}"></div></div>`;
+  h+=`<div class="row" style="margin-top:10px"><div><label>Flat staff-conversion points</label><input type="number" id="s_flat" value="${sc.convFlat!=null?sc.convFlat:250}"></div><div><label>Point value (₹ per point)</label><input type="number" step="0.01" id="s_pv" value="${sc.pointValue!=null?sc.pointValue:0.10}"></div></div>`;
+  h+=`<p class="note">Points convert to a <b>gift</b> at the point value (₹ per point) — use it to plan staff rewards. The <b>Rate %</b> on the sale amount is the separate cash incentive. Owner-converted leads earn the staff 0 conversion points.</p>`;
+  h+=`<div class="row" style="margin-top:10px"><div><label>Settlement period</label><select id="s_period"><option ${(sc.period||"Quarterly")==="Quarterly"?"selected":""}>Quarterly</option><option ${sc.period==="Monthly"?"selected":""}>Monthly</option></select></div><div><label>Booster reward</label><input id="s_reward" value="${sc.reward||"Top scorer reward"}"></div></div><div class="row" style="margin-top:6px"><div><label>Reward goal — gift ₹ to win</label><input type="number" id="s_goal" value="${sc.rewardGoal!=null?sc.rewardGoal:5000}"></div><div></div></div>`;
+  document.getElementById("schemeEditor").innerHTML=h;
+}
+function readEditorProducts(){const prods=[],tg={},rt={};editorProducts.forEach((p,i)=>{const nm=((document.getElementById("n_"+i)||{}).value||"").trim();if(!nm)return;prods.push(nm);tg[nm]=v("t_"+i);rt[nm]=v("r_"+i);});return{prods,tg,rt};}
+function saveScheme(silent){
+  const ep=readEditorProducts();
+  const sc={products:ep.prods,targets:ep.tg,rate:ep.rt};
+  sc.convM={};editorProducts.forEach((p,i)=>{const nm=((document.getElementById("n_"+i)||{}).value||"").trim();if(!nm)return;const o={};SOURCES.forEach((s,si)=>{o[s]=v("cm_"+i+"_"+si);});sc.convM[nm]=o;});
+  sc.actpoints={sale:v("ap_sale"),review:v("ap_review"),location:v("ap_location"),followup:v("ap_followup")};
+  sc.convFlat=v("s_flat");sc.pointValue=+((document.getElementById("s_pv")||{}).value)||0.10;
+  sc.period=document.getElementById("s_period").value;sc.reward=document.getElementById("s_reward").value;sc.rewardGoal=v("s_goal");
+  localStorage.setItem(SKEY,JSON.stringify(sc));if(!silent)toast("Scheme saved","ok");renderTargets();
+}
+function addSchemeProduct(){const name=prompt("New product / scheme name:");if(!name||!name.trim())return;saveScheme(true);const sc=getScheme();const list=(sc.products&&sc.products.length?sc.products:PRODUCTS).slice();list.push(name.trim());sc.products=list;localStorage.setItem(SKEY,JSON.stringify(sc));toast("Added: "+name.trim(),"ok");fillSelect("f_prod",getProducts());renderTargets();}
+function delSchemeProduct(i){saveScheme(true);const sc=getScheme();const list=(sc.products&&sc.products.length?sc.products:PRODUCTS).slice();const nm=list[i];list.splice(i,1);if(nm){delete sc.targets[nm];delete sc.rate[nm];if(sc.points)delete sc.points[nm];}sc.products=list;localStorage.setItem(SKEY,JSON.stringify(sc));toast("Removed","ok");fillSelect("f_prod",getProducts());renderTargets();}
+function resetScheme(){localStorage.removeItem(SKEY);toast("Reset to defaults","ok");fillSelect("f_prod",getProducts());renderTargets();}
+
+function exportCSV(){
+  const a=load();if(!a.length)return toast("No data to export","err");
+  const cols=["date","staff","act","src","by","cust","phone","prod","item","qty","unit","quote","sale","rev","loc","lat","lng","maps","video","videoName","status","rem","collected","labor"];
+  const head=["Date","Staff","Activity","Source","ConvBy","Customer","Contact","Product","ProductUsed","Qty","Unit","Quote","Sale","Review","Location","Lat","Lng","MapsLink","Video","VideoName","Status","Remarks","Collected","LaborPaid","FollowUps"];
+  const esc=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const csv=[head.join(",")].concat(a.map(e=>cols.map(c=>esc(e[c])).concat(esc((e.followups||[]).map(f=>f.date+(f.done?"(done)":"")+(f.note?":"+f.note:"")).join(" | "))).join(","))).join("\n");
+  const url=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));const l=document.createElement("a");l.href=url;l.download="CCS_punches_"+todayStr()+".csv";l.click();toast("Exported CSV","ok");
+}
+function importCSV(ev){const f=ev.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{const lines=rd.result.split(/\r?\n/).filter(x=>x.trim());lines.shift();const a=load();let n=0;
+    lines.forEach(line=>{const m=line.match(/("([^"]|"")*"|[^,]*)(,|$)/g);if(!m)return;const c=m.map(x=>x.replace(/,$/,"").replace(/^"|"$/g,"").replace(/""/g,'"'));
+      a.push({id:"e"+Date.now()+Math.floor(Math.random()*9999),date:c[0],staff:c[1],act:c[2],src:c[3],by:c[4],cust:c[5],phone:c[6],prod:c[7],item:c[8],qty:+c[9]||0,unit:c[10],quote:+c[11]||0,sale:+c[12]||0,rev:c[13],loc:c[14],lat:c[15],lng:c[16],maps:c[17],video:c[18],videoName:c[19],status:c[20],rem:c[21],followups:[],created:Date.now()});n++;});
+    save(a);toast("Imported "+n+" rows","ok");renderRecent();};rd.readAsText(f);}
+function clearAll(){if(confirm("Delete ALL punches on this phone? Export first if you need a backup.")){localStorage.removeItem(KEY);renderRecent();toast("Cleared","ok")}}
+
+function quarterRange(){const n=new Date(),q=Math.floor(n.getMonth()/3);const s=new Date(n.getFullYear(),q*3,1),e=new Date(n.getFullYear(),q*3+3,0);return{start:s.toISOString().slice(0,10),end:e.toISOString().slice(0,10),q:q+1,y:n.getFullYear()};}
+function quarterData(){const r=quarterRange();return load().filter(e=>(e.date||"")>=r.start&&(e.date||"")<=r.end);}
+function quarterLabel(){const r=quarterRange();return "Q"+r.q+" "+r.y;}
+
+function loadDemo(){
+  const a=load(),t=new Date(),acts=["Walk-in","Site Visit","Quotation Given","Sale Closed","Follow-up Done"];
+  const custs=["Mr. Sharma","Mrs. Patel","Mr. Khan","Ms. Rao","Mr. Gupta","Mrs. Iyer"];
+  const srcs=["Cold call","Walk-in","Social media","Owner reference","Old lead","Other"];
+  const items={"Wallpaper":"Design WP-204","Italian Texture":"Texture Ottimo","Advanced Range":"Royale Aspira","BHPS Service":"Full Home Package","Waterproofing":"SmartCare Damp Proof"};
+  for(let dd=0;dd<6;dd++){const day=new Date(t);day.setDate(t.getDate()-dd);const ds=day.toISOString().slice(0,10);
+    for(let i=0;i<5+Math.floor(Math.random()*4);i++){
+      const act=acts[Math.floor(Math.random()*acts.length)],prod=PRODUCTS[Math.floor(Math.random()*PRODUCTS.length)];
+      const q=["Quotation Given","Sale Closed"].includes(act)?[15000,28000,45000,62000][Math.floor(Math.random()*4)]:0;
+      const sale=act==="Sale Closed"?q:0,closed=act==="Sale Closed";
+      const unit=prod==="Wallpaper"?"Rolls":(prod==="BHPS Service"?"Job":"Sqft");
+      const qty=prod==="Wallpaper"?2+Math.floor(Math.random()*6):(prod==="BHPS Service"?1:100+Math.floor(Math.random()*900));
+      a.push({id:"e"+Date.now()+Math.floor(Math.random()*99999),date:ds,staff:getStaff()[Math.floor(Math.random()*getStaff().length)],act,src:srcs[Math.floor(Math.random()*srcs.length)],by:Math.random()>.3?"Staff":"Owner",cust:custs[Math.floor(Math.random()*custs.length)],phone:"98xxxx"+Math.floor(1000+Math.random()*8999),prod,item:items[prod],qty,unit,quote:q,sale,rev:closed?"Y":(Math.random()>.6?"Y":"N"),loc:Math.random()>.4?"Y":"N",lat:"19.07",lng:"72.87",maps:"https://www.google.com/maps?q=19.07,72.87",video:closed?"Y":"N",videoName:closed?"feedback.mp4":"",followups:act==="Quotation Given"?[{date:new Date(day.getTime()+86400000*3).toISOString().slice(0,10),note:"Call back",done:false}]:[],status:closed?"Closed":["Open","Following up","Hot lead"][Math.floor(Math.random()*3)],rem:"",created:Date.now()});}}
+  save(a);toast("Demo data loaded","ok");renderRecent();
+}
+
+/* ===== Quotation maker ===== */
+let qlines=[];
+function qNo(){const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]");const d=new Date();const fy=(d.getMonth()>=3?d.getFullYear():d.getFullYear()-1);const yy=String(fy).slice(2)+String(fy+1).slice(2);return "CCS/"+yy+"/"+String(Q.length+1).padStart(3,"0");}
+function initQuote(){
+  fillSelect("q_staff",getStaff());
+  const qn=document.getElementById("q_no");qn.value=qNo();qn.readOnly=true;
+  if(!qlines.length)qlines=[{prod:getProducts()[0],desc:"",qty:0,unit:"Sqft",rate:0}];
+  renderQuoteLines();
+}
+function addQuoteLine(){const P=getProducts();qlines.push({prod:P[0],desc:"",qty:0,unit:(P[0]==="Wallpaper"?"Rolls":"Sqft"),rate:0});renderQuoteLines();}
+function rmQuoteLine(i){qlines.splice(i,1);if(!qlines.length)qlines=[{prod:getProducts()[0],desc:"",qty:0,unit:"Sqft",rate:0}];renderQuoteLines();}
+function updQuote(i,k,val){qlines[i][k]=(k==="qty"||k==="rate")?(+val||0):val;const amt=(+qlines[i].qty||0)*(+qlines[i].rate||0);const ae=document.getElementById("qa_"+i);if(ae)ae.value=amt;calcQuote();}
+function renderQuoteLines(){
+  const P=getProducts();
+  document.getElementById("qlines").innerHTML=qlines.map((l,i)=>`<div class="card" style="padding:10px">
+    <div class="row"><div><label>Product</label><select onchange="updQuote(${i},'prod',this.value)">${P.map(p=>`<option ${p===l.prod?"selected":""}>${p}</option>`).join("")}</select></div>
+    <div><label>Unit</label><select onchange="updQuote(${i},'unit',this.value)">${["Sqft","Rolls","Litres","Job"].map(u=>`<option ${u===l.unit?"selected":""}>${u}</option>`).join("")}</select></div></div>
+    <label>Description</label><input value="${(l.desc||"").replace(/"/g,"&quot;")}" oninput="updQuote(${i},'desc',this.value)" placeholder="e.g. Royale Aspira interior / WP design 204">
+    <div class="row"><div><label>Qty</label><input type="number" value="${l.qty||""}" oninput="updQuote(${i},'qty',this.value)"></div><div><label>Rate ₹</label><input type="number" value="${l.rate||""}" oninput="updQuote(${i},'rate',this.value)"></div><div><label>Amount ₹</label><input id="qa_${i}" value="${(+l.qty||0)*(+l.rate||0)}" readonly></div></div>
+    <span style="color:var(--red);cursor:pointer;font-weight:800;font-size:12px" onclick="rmQuoteLine(${i})">✕ remove line</span></div>`).join("");
+  calcQuote();
+}
+function calcQuote(){
+  const sub=qlines.reduce((a,l)=>a+(+l.qty||0)*(+l.rate||0),0);
+  const disc=sub*((+document.getElementById("q_disc").value||0)/100);
+  const tax=(sub-disc)*((+document.getElementById("q_gst").value||0)/100);
+  const grand=sub-disc+tax;
+  const box=document.getElementById("qtotals");
+  if(box)box.innerHTML=`<div style="display:flex;justify-content:space-between"><span>Sub Total</span><b>${fmt(Math.round(sub))}</b></div><div style="display:flex;justify-content:space-between"><span>Discount</span><b>- ${fmt(Math.round(disc))}</b></div><div style="display:flex;justify-content:space-between"><span>GST</span><b>${fmt(Math.round(tax))}</b></div><div style="display:flex;justify-content:space-between;font-size:16px;color:var(--navy);margin-top:6px;border-top:1px solid #cbd5e1;padding-top:6px"><span><b>Grand Total</b></span><b>${fmt(Math.round(grand))}</b></div>`;
+  return{sub,disc,tax,grand};
+}
+function previewQuote(){
+  const t=calcQuote();const w=window.open("","_blank");if(!w){toast("Allow pop-ups to preview","err");return;}
+  const rows=qlines.map((l,i)=>`<tr><td>${i+1}</td><td>${l.prod}${l.desc?(" - "+l.desc):""}</td><td style="text-align:center">${l.qty} ${l.unit}</td><td style="text-align:right">${fmt(l.rate)}</td><td style="text-align:right">${fmt((+l.qty||0)*(+l.rate||0))}</td></tr>`).join("");
+  const cust=document.getElementById("q_cust").value||"-",phone=document.getElementById("q_phone").value||"",addr=document.getElementById("q_addr").value||"-",staff=document.getElementById("q_staff").value,no=document.getElementById("q_no").value;
+  w.document.write(`<html><head><title>Quotation ${no}</title><style>body{font-family:Arial;padding:22px;color:#111}h1{color:#1F3864;margin:0;font-size:22px}.s{color:#555;font-size:11px}table{width:100%;border-collapse:collapse;margin-top:12px}th,td{border:1px solid #ccc;padding:6px;font-size:12px}th{background:#1F3864;color:#fff}.tot{float:right;width:62%;margin-top:8px}.tot td{border:none;padding:3px 6px}</style></head><body>
+    <h1>${(getSettings().shop.name||"Chandra Color Shoppee").toUpperCase()}</h1><div class="s">Authorised Asian Paints Dealer · Wallpapers · Italian Textures · Royale Advanced Range · BHPS · Waterproofing</div><hr>
+    <p style="font-size:13px"><b>Quotation:</b> ${no} &nbsp;&nbsp; <b>Date:</b> ${todayStr()}<br><b>Customer:</b> ${cust} (${phone})<br><b>Site:</b> ${addr}<br><b>Consultant:</b> ${staff}</p>
+    <table><tr><th>#</th><th>Product / Description</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>${rows}</table>
+    <table class="tot"><tr><td>Sub Total</td><td style="text-align:right">${fmt(Math.round(t.sub))}</td></tr><tr><td>Discount</td><td style="text-align:right">- ${fmt(Math.round(t.disc))}</td></tr><tr><td>GST</td><td style="text-align:right">${fmt(Math.round(t.tax))}</td></tr><tr><td><b>Grand Total</b></td><td style="text-align:right"><b>${fmt(Math.round(t.grand))}</b></td></tr></table>
+    <div style="clear:both;margin-top:34px;font-size:11px;color:#555">Valid 15 days · 50% advance to confirm · GST as applicable · E&amp;OE · Kindly review us on Google after completion. Scan the review QR at our counter.</div>
+    <scr`+`ipt>window.print()<\/scr`+`ipt></body></html>`);
+  w.document.close();
+}
+function shareQuote(){
+  const t=calcQuote();
+  const lines=qlines.map(l=>`• ${l.prod}${l.desc?(" "+l.desc):""} - ${l.qty} ${l.unit} x ${fmt(l.rate)} = ${fmt((+l.qty||0)*(+l.rate||0))}`).join("%0A");
+  const msg=`*Chandra Color Shoppee - Quotation*%0A${document.getElementById("q_no").value}%0ACustomer: ${encodeURIComponent(document.getElementById("q_cust").value||"")}%0A%0A${lines}%0A%0ASub: ${fmt(Math.round(t.sub))} | GST: ${fmt(Math.round(t.tax))}%0A*Grand Total: ${fmt(Math.round(t.grand))}*%0AValid 15 days. Kindly review us on Google!`;
+  const ph=(document.getElementById("q_phone").value||"").replace(/\D/g,"");
+  window.open("https://wa.me/"+(ph?("91"+ph):"")+"?text="+msg,"_blank");
+}
+function saveQuotePunch(){
+  const t=calcQuote();const cust=document.getElementById("q_cust").value.trim();
+  if(!cust)return toast("Enter customer name","err");
+  if(t.grand<=0)return toast("Add at least one line with qty & rate","err");
+  const no=document.getElementById("q_no").value,phone=document.getElementById("q_phone").value.trim(),addr=document.getElementById("q_addr").value.trim(),staff=document.getElementById("q_staff").value;
+  const _cs=(window._pendingPunch&&window._pendingPunch.staff)||staff;if(!getAtt().some(x=>x.date===todayStr()&&x.staff===_cs&&x.type==="in"))return toast(_cs+" must Check in (Attendance) before quoting.","err");
+  const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]");
+  Q.push({id:"q"+Date.now(),no,date:todayStr(),cust,phone,addr,staff,lines:qlines.slice(),total:Math.round(t.grand),status:"Pending",freshId:(window._leadFresh||"")});
+  localStorage.setItem("ccs_quotes",JSON.stringify(Q));
+  const a=load();const firstProd=(qlines[0]||{}).prod||getProducts()[0];const pp=window._pendingPunch||{};
+  a.push({id:"e"+Date.now(),date:(pp.date||todayStr()),staff:(pp.staff||staff),act:"Quotation Given",src:(pp.src||"Walk-in"),by:(pp.by||"Staff"),cust,phone,prod:firstProd,item:qlines.map(l=>l.prod+(l.desc?(" "+l.desc):"")).join("; ").slice(0,90),qty:qlines.reduce((s,l)=>s+(+l.qty||0),0),unit:(qlines[0]||{}).unit||"Sqft",quote:Math.round(t.grand),sale:0,rev:"N",loc:"N",lat:"",lng:"",maps:"",video:"N",videoName:"",followups:[{date:new Date(Date.now()+86400000*2).toISOString().slice(0,10),note:"Follow up on quotation "+no,done:false}],status:"Open",rem:"Auto-created from quotation "+no,created:Date.now()});
+  save(a);
+  toast("Quotation saved & logged","ok");
+  qlines=[{prod:getProducts()[0],desc:"",qty:0,unit:"Sqft",rate:0}];
+  document.getElementById("q_no").value=qNo();["q_cust","q_phone","q_addr"].forEach(id=>document.getElementById(id).value="");window._leadFresh="";
+  renderQuoteLines();renderQuoteRecent();renderRecent();if(window._pendingPunch){try{clearForm();}catch(e){}}window._pendingPunch=null;
+}
+let pendingCloseQuote=null;
+function renderQuoteRecent(){
+  const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]").slice().reverse().slice(0,14);
+  const pill=s=>`<span class="pill ${s==="Approved"?"info":(s==="Closed"?"ok":(s==="Rejected"?"bad":"warn"))}">${s||"Pending"}</span>`;
+  document.getElementById("qrecent").innerHTML=Q.length?Q.map(q=>{
+    const st=q.status||"Pending";
+    let actions="";
+    if(role==="Owner"&&st==="Pending")actions=`<div class="small-actions"><button class="btn green sm" onclick="approveQuote('${q.id}')">✓ Approve</button><button class="btn ghost sm" style="color:var(--red)" onclick="rejectQuote('${q.id}')">✕ Reject</button></div>`;
+    else if(st==="Approved")actions=`<div class="small-actions"><button class="btn sm" onclick="closeSite('${q.id}')">🏁 Close site (needs review + video)</button></div>`;
+    return `<div class="entry"><div class="top"><span>${q.cust} · ${q.no}</span><span class="note">${fmt(q.total)}</span></div><div class="meta">${q.date} · ${q.staff} · ${q.lines.length} item(s) · ${pill(st)}</div>${actions}</div>`;
+  }).join(""):'<p class="note">No quotations yet. Make your first above.</p>';
+}
+function setQuoteStatus(id,st){const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]");const q=Q.find(x=>x.id===id);if(q)q.status=st;localStorage.setItem("ccs_quotes",JSON.stringify(Q));toast("Quote "+st,"ok");renderQuoteRecent();}
+function approveQuote(id){if(role!=="Owner")return toast("Owner approval only","err");setQuoteStatus(id,"Approved");}
+function rejectQuote(id){if(role!=="Owner")return toast("Owner approval only","err");setQuoteStatus(id,"Rejected");}
+function closeSite(id){
+  const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]");const q=Q.find(x=>x.id===id);if(!q)return;
+  if(!confirm("Site finished for "+q.cust+"?\n\nClosing is allowed only with a Google review AND a customer video.\nTap OK once the Google review has been collected, then attach the video.")){return;}
+  pendingCloseQuote=id;document.getElementById("qvid").value="";document.getElementById("qvid").click();
+}
+function onCloseVideo(ev){
+  const f=ev.target.files[0];const id=pendingCloseQuote;pendingCloseQuote=null;
+  if(!id)return; if(!f)return toast("Customer video is mandatory to close the site","err");
+  const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]");const q=Q.find(x=>x.id===id);if(!q)return;
+  q.status="Closed";localStorage.setItem("ccs_quotes",JSON.stringify(Q));
+  if(fbDb){try{fbDb.collection("crm_outbox").add({shop:fbShop(),cust:q.cust,product:(q.lines[0]||{}).prod||"",value:q.total,freshDealId:q.freshId||"",status:"Won",t:Date.now()});}catch(e){}}
+  idb.put("q_"+id,f);
+  const a=load();
+  a.push({id:"e"+Date.now(),date:todayStr(),staff:q.staff,act:"Sale Closed",src:"Walk-in",by:"Staff",cust:q.cust,phone:q.phone,prod:(q.lines[0]||{}).prod||getProducts()[0],item:q.lines.map(l=>l.prod+(l.desc?(" "+l.desc):"")).join("; ").slice(0,90),qty:q.lines.reduce((s,l)=>s+(+l.qty||0),0),unit:(q.lines[0]||{}).unit||"Sqft",quote:q.total,sale:q.total,collected:0,labor:0,rev:"Y",loc:"N",lat:"",lng:"",maps:"",video:"Y",videoName:f.name,followups:[],status:"Closed",rem:"Site closed from quotation "+q.no,created:Date.now()});
+  save(a);
+  toast("Site closed ✓ (review + video recorded)","ok");renderQuoteRecent();renderRecent();
+}
+let editStaff=[];
+function renderSettings(){
+  const s=getSettings();
+  document.getElementById("set_name").value=s.shop.name||"";
+  document.getElementById("set_addr").value=s.shop.address||"";
+  document.getElementById("set_phone").value=s.shop.phone||"";
+  document.getElementById("set_gst").value=s.shop.gst||"";
+  document.getElementById("set_review").value=s.shop.review||"";
+  const stx=document.getElementById("storeLocTxt");if(stx)stx.textContent=(s.shop.lat&&s.shop.lng)?("Set: "+s.shop.lat+", "+s.shop.lng):"Not set — stand at the store and tap Set to here";
+  const sr=document.getElementById("set_radius");if(sr)sr.value=(s.shop.attRadius||200);
+  editStaff=getStaff().slice();drawStaff();
+  const RR=getSettings().req||{};["phone","item","qty","quote","loc","reviewClose","videoClose"].forEach(k=>{const el=document.getElementById("req_"+k);if(el)el.checked=RR[k]!==false;});
+  const fc=document.getElementById("fb_cfg");if(fc){try{fc.value=JSON.stringify(fbCfg(),null,2);}catch(e){}}
+  const fsh=document.getElementById("fb_shop");if(fsh)fsh.value=fbShop();
+  if(fbReady)cloudStatus("Connected ✓ — Shop ID '"+fbShop()+"'.",true);
+}
+function drawStaff(){document.getElementById("staffList").innerHTML=editStaff.map((n,i)=>`<div class="row" style="margin-bottom:6px;align-items:center"><div style="flex:5"><input id="st_${i}" value="${(n||"").replace(/"/g,"&quot;")}"></div><div style="flex:1;text-align:center"><span style="color:var(--red);font-weight:800;cursor:pointer" onclick="rmStaff(${i})">✕</span></div></div>`).join("");}
+function addStaffRow(){const cur=editStaff.map((n,i)=>(document.getElementById("st_"+i)||{}).value||n);editStaff=cur;editStaff.push("");drawStaff();}
+function rmStaff(i){const cur=editStaff.map((n,j)=>(document.getElementById("st_"+j)||{}).value||n);cur.splice(i,1);editStaff=cur;drawStaff();}
+function saveSettings(){
+  const staff=editStaff.map((n,i)=>((document.getElementById("st_"+i)||{}).value||"").trim()).filter(Boolean);
+  const cur=getSettings().shop||{};const s={shop:{name:document.getElementById("set_name").value.trim()||"Chandra Color Shoppee",address:document.getElementById("set_addr").value.trim(),phone:document.getElementById("set_phone").value.trim(),gst:document.getElementById("set_gst").value.trim(),review:document.getElementById("set_review").value.trim(),lat:cur.lat||"",lng:cur.lng||"",attRadius:(+((document.getElementById("set_radius")||{}).value)||cur.attRadius||200)},staff:staff.length?staff:STAFF};
+  const R0=getSettings().req||{};const cb=(id,k)=>{const el=document.getElementById(id);return el?!!el.checked:(R0[k]!==false);};
+  s.req={phone:cb("req_phone","phone"),item:cb("req_item","item"),qty:cb("req_qty","qty"),quote:cb("req_quote","quote"),loc:cb("req_loc","loc"),reviewClose:cb("req_reviewClose","reviewClose"),videoClose:cb("req_videoClose","videoClose")};
+  localStorage.setItem("ccs_settings",JSON.stringify(s));
+  fillStaffSelects();toast("Settings saved","ok");renderSettings();
+}
+function loginAs(r){
+  if(r==="Owner"){const p=prompt("Enter Owner PIN (default 1234):");if(p===null)return;if(p!==getPin()){alert("Wrong PIN");return;}role="Owner";}
+  else{role="Staff";}
+  document.getElementById("roleBtn").textContent=(role==="Owner"?"👑 Owner":"👤 Staff");
+  document.getElementById("schemeCard").style.display=(role==="Owner"?"block":"none");
+  applyRoleVisibility();
+  const ov=document.getElementById("loginOverlay");if(ov)ov.style.display="none";
+  show("punch");
+}
+function getLeads(){try{return JSON.parse(localStorage.getItem("ccs_leads")||"[]");}catch(e){return[];}}
+function renderLeads(){
+  const L=getLeads().slice().reverse();const box=document.getElementById("leadsList");if(!box)return;
+  box.innerHTML=L.length?L.map(l=>`<div class="entry"><div class="top"><span>${l.cust||"Lead"}</span><span class="note">${l.src||"Freshsales"}</span></div><div class="meta">${l.phone||"no phone"}${l.note?(" · "+l.note):""}</div><div class="small-actions"><button class="btn green sm" onclick="makeQuoteFromLead('${l.freshId||""}')">\U0001f9fe Make quote</button></div></div>`).join(""):'<p class="note">No leads yet. New Freshsales leads appear here automatically once the bridge is deployed.</p>';
+}
+function makeQuoteFromLead(freshId){const l=getLeads().find(x=>String(x.freshId)===String(freshId))||{};window._leadFresh=freshId||"";show("quote");setTimeout(function(){const c=document.getElementById("q_cust");if(c)c.value=l.cust||"";const p=document.getElementById("q_phone");if(p)p.value=l.phone||"";},60);toast("Lead loaded into quote","ok");}
+function getAtt(){try{return JSON.parse(localStorage.getItem("ccs_att")||"[]");}catch(e){return[];}}
+function nearestCustomer(lat,lng){let best=null;load().forEach(e=>{if(e.lat&&e.lng){const d=distM(+e.lat,+e.lng,+lat,+lng);if(d<=250&&(!best||d<best.dist))best={name:e.cust||"site",dist:d};}});return best;}
+function markAtt(type){const sel=document.getElementById("att_staff");const staff=sel?sel.value:getStaff()[0];
+  if(!navigator.geolocation)return toast("Location is mandatory for attendance — enable GPS/location.","err");
+  const sh=getSettings().shop||{};const radius=+(sh.attRadius)||200;
+  toast("Getting your location…","ok");
+  navigator.geolocation.getCurrentPosition(p=>{
+    const lat=p.coords.latitude.toFixed(5),lng=p.coords.longitude.toFixed(5);
+    let dist=null;if(sh.lat&&sh.lng)dist=distM(+sh.lat,+sh.lng,+lat,+lng);
+    if(type==="in" && !getAtt().some(x=>x.date===todayStr()&&x.staff===staff&&x.type==="in")){const atSt=(dist!=null&&dist<=radius);if(!atSt&&!nearestCustomer(lat,lng)){return toast("First check-in must be AT the store or a customer site — you are "+(dist!=null?(dist>=1000?(dist/1000).toFixed(1)+"km":dist+"m"):"?")+" away.","err");}}
+    let where,flag=false;
+    if(dist!=null&&dist<=radius){where="at store ✓";}
+    else{const km=dist!=null?(dist>=1000?(dist/1000).toFixed(1)+" km":dist+" m"):"unknown distance";const nc=nearestCustomer(lat,lng);if(nc){where=km+" from store · at customer site: "+nc.name;}else{where=km+" from store · ⚠ NOT a customer site";flag=true;}}
+    const now=new Date();const rec={id:"a"+Date.now(),date:todayStr(),staff,type,time:now.toTimeString().slice(0,5),ts:now.getTime(),lat,lng,dist,atStore:(dist!=null&&dist<=radius),where,flag};
+    const a=getAtt();a.push(rec);localStorage.setItem("ccs_att",JSON.stringify(a));
+    toast(staff+" checked "+(type==="in"?"IN":"OUT")+" "+rec.time+" · "+where,flag?"err":"ok");
+    renderAttToday();if(typeof renderAttDash==="function")renderAttDash();
+  },e=>toast("Location is mandatory for attendance — allow location access ("+e.message+")","err"),{enableHighAccuracy:true,timeout:10000});
+}
+function renderAttToday(){const box=document.getElementById("attToday");if(!box)return;const a=getAtt().filter(x=>x.date===todayStr());if(!a.length){box.textContent="No attendance marked today.";return;}const by={};a.forEach(x=>{by[x.staff]=by[x.staff]||{};if(x.type==="in"&&!by[x.staff].in)by[x.staff].in=x.time;if(x.type==="out")by[x.staff].out=x.time;});box.innerHTML=Object.keys(by).map(s=>`<b>${s}</b>: in ${by[s].in||"—"}${by[s].out?(" · out "+by[s].out):""}`).join("<br>");}
+function renderAttDash(){const box=document.getElementById("attDash");if(!box)return;const a=getAtt().filter(x=>x.date===todayStr());if(!a.length){box.innerHTML='<p class="note">No attendance today.</p>';return;}const by={};a.forEach(x=>{by[x.staff]=by[x.staff]||{};if(x.type==="in"&&!by[x.staff].in)by[x.staff].in=x;if(x.type==="out")by[x.staff].out=x;});box.innerHTML=`<div style="overflow-x:auto"><table><tr><th class="l">Staff</th><th>In</th><th>Out</th><th>Hours</th><th class="l">Location</th></tr>`+Object.keys(by).map(s=>{const i=by[s].in,o=by[s].out;const hrs=(i&&o)?((o.ts-i.ts)/3600000).toFixed(1):"—";const w=i?(i.where||""):"";return `<tr><td class="l">${s}</td><td>${i?i.time:"—"}</td><td style="${i&&!o?"color:var(--red);font-weight:700":""}">${o?o.time:(i?"⚠ no out":"—")}</td><td>${hrs}</td><td class="l" style="${i&&i.flag?"color:var(--red);font-weight:700":""}">${w}</td></tr>`;}).join("")+`</table></div>`;}
+function setStoreLoc(){if(!navigator.geolocation)return toast("No GPS on this device","err");toast("Capturing store location…","ok");navigator.geolocation.getCurrentPosition(p=>{const s=getSettings();s.shop=s.shop||{};s.shop.lat=p.coords.latitude.toFixed(6);s.shop.lng=p.coords.longitude.toFixed(6);localStorage.setItem("ccs_settings",JSON.stringify(s));toast("Store location saved","ok");renderSettings();},e=>toast("Failed: "+e.message,"err"),{enableHighAccuracy:true,timeout:10000});}
+function fillSelect(id,arr){const el=document.getElementById(id);if(el)el.innerHTML=arr.map(x=>`<option>${x}</option>`).join("")}
+function fillStaffSelects(){const st=getStaff();["f_staff","att_staff","q_staff"].forEach(id=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;fillSelect(id,st);if(cur&&st.indexOf(cur)>=0)el.value=cur;});}
+idb.open();
+fillStaffSelects();fillSelect("f_prod",getProducts());renderAttToday();
+document.getElementById("f_date").value=todayStr();
+document.getElementById("d_date").value=todayStr();
+document.getElementById("fu_date").value=todayStr();
+document.getElementById("f_status").addEventListener("change",updateGate);
+function autoUnit(){const p=document.getElementById("f_prod").value;document.getElementById("f_unit").value=p==="Wallpaper"?"Rolls":(p==="BHPS Service"?"Job":"Sqft");}
+document.getElementById("f_prod").addEventListener("change",autoUnit);autoUnit();
+document.getElementById("schemeCard").style.display="none";
+applyRoleVisibility();cloudInit();updateGate();renderRecent();
+</script>
+</body>
+</html>
