@@ -108,6 +108,7 @@
     </div>
     <label>Product category <span class="req">*</span></label>
     <select id="f_prod"></select>
+    <span class="note" style="color:var(--blue);cursor:pointer;display:inline-block;margin-top:4px" onclick="addProductQuick()">+ add product</span>
     <label>Product / shade to be used <span class="req">*</span></label>
     <input id="f_item" placeholder="e.g. Royale Aspira / Wallpaper design code / Texture name">
     <div class="row">
@@ -295,9 +296,9 @@ const DEFAULT_SCHEME={
   targets:{"Wallpaper":150000,"Italian Texture":120000,"Advanced Range":200000,"BHPS Service":300000,"Waterproofing":100000},
   rate:{"Wallpaper":1.5,"Italian Texture":1.5,"Advanced Range":1.0,"BHPS Service":2.0,"Waterproofing":1.5},
   convM:{"Wallpaper":{"Cold call":250,"Walk-in":100,"Social media":150,"Owner reference":120,"Old lead":80,"Other":100},"Italian Texture":{"Cold call":200,"Walk-in":90,"Social media":120,"Owner reference":100,"Old lead":70,"Other":90},"Advanced Range":{"Cold call":120,"Walk-in":60,"Social media":80,"Owner reference":70,"Old lead":50,"Other":60},"BHPS Service":{"Cold call":300,"Walk-in":150,"Social media":200,"Owner reference":180,"Old lead":120,"Other":150},"Waterproofing":{"Cold call":150,"Walk-in":70,"Social media":100,"Owner reference":90,"Old lead":60,"Other":80}},
-  actpoints:{sale:15,review:5,location:3,followup:2},
+  actpoints:{sale:0,greview:5,video:5,location:1,followup:1},
   convFlat:250,
-  pointValue:0.10,
+  pointValue:1.20,
   rewardGoal:5000,
   products:["Wallpaper","Italian Texture","Advanced Range","BHPS Service","Waterproofing"],
   period:"Quarterly", reward:"Top scorer wins the quarterly booster reward"
@@ -566,7 +567,7 @@ function renderTeam(){
   const inc=getStaff().map(s=>{let pts=0,catCash=0;const r=md.filter(e=>e.staff===s);
     getProducts().forEach(p=>{const val=r.filter(e=>e.prod===p).reduce((a,e)=>a+(+e.sale||0),0);catCash+=val*((sc.rate[p]||0)/100);});
     const fudone=r.reduce((a,e)=>a+((e.followups||[]).filter(f=>f.done).length),0);
-    pts+=r.filter(e=>e.act==="Sale Closed").length*(ap.sale||0)+r.filter(e=>e.rev==="Y").length*(ap.review||0)+r.filter(e=>e.loc==="Y").length*(ap.location||0)+fudone*(ap.followup||0);
+    pts+=r.filter(e=>e.act==="Sale Closed").length*(ap.sale||0)+r.filter(e=>e.rev==="Y").length*(ap.greview!=null?ap.greview:(ap.review||0))+r.filter(e=>e.video==="Y").length*(ap.video||0)+r.filter(e=>e.loc==="Y").length*(ap.location||0)+fudone*(ap.followup||0);
     r.filter(e=>e.act==="Sale Closed"&&(e.by||"Staff")!=="Owner").forEach(e=>{const m=cm[e.prod]||{};pts+=(m[e.src||"Other"]||0)+flat;});
     const ptsCash=pts*pv;const total=Math.round(catCash+ptsCash);
     return{s,pts:Math.round(pts),ptsCash:Math.round(ptsCash),cat:Math.round(catCash),total,left:Math.max(0,Math.round(goal-ptsCash))};});
@@ -598,7 +599,7 @@ function renderSchemeEditor(){
   editorProducts.forEach((p,i)=>{const m=cm[p]||{};h+=`<tr><td class="l">${p}</td>`+SOURCES.map((s,si)=>`<td><input type="number" id="cm_${i}_${si}" value="${m[s]||0}" style="padding:6px;width:58px"></td>`).join("")+`</tr>`;});
   h+=`</table></div>`;
   const ap=sc.actpoints||{sale:0,review:0,location:0,followup:0};
-  h+=`<h3 style="margin-top:14px">Activity points (added for everyone)</h3><div class="row"><div><label>Sale</label><input type="number" id="ap_sale" value="${ap.sale||0}"></div><div><label>Review</label><input type="number" id="ap_review" value="${ap.review||0}"></div></div><div class="row"><div><label>Location</label><input type="number" id="ap_location" value="${ap.location||0}"></div><div><label>Follow-up</label><input type="number" id="ap_followup" value="${ap.followup||0}"></div></div>`;
+  h+=`<h3 style="margin-top:14px">Activity points (added for everyone)</h3><div class="row"><div><label>Sale</label><input type="number" id="ap_sale" value="${ap.sale||0}"></div><div><label>Google review</label><input type="number" id="ap_greview" value="${ap.greview!=null?ap.greview:(ap.review||0)}"></div></div><div class="row"><div><label>Video review</label><input type="number" id="ap_video" value="${ap.video||0}"></div><div><label>Location</label><input type="number" id="ap_location" value="${ap.location||0}"></div></div><div class="row"><div><label>Follow-up</label><input type="number" id="ap_followup" value="${ap.followup||0}"></div><div></div></div>`;
   h+=`<div class="row" style="margin-top:10px"><div><label>Flat staff-conversion points</label><input type="number" id="s_flat" value="${sc.convFlat!=null?sc.convFlat:250}"></div><div><label>Point value (₹ per point)</label><input type="number" step="0.01" id="s_pv" value="${sc.pointValue!=null?sc.pointValue:0.10}"></div></div>`;
   h+=`<p class="note">Points convert to a <b>gift</b> at the point value (₹ per point) — use it to plan staff rewards. The <b>Rate %</b> on the sale amount is the separate cash incentive. Owner-converted leads earn the staff 0 conversion points.</p>`;
   h+=`<div class="row" style="margin-top:10px"><div><label>Settlement period</label><select id="s_period"><option ${(sc.period||"Quarterly")==="Quarterly"?"selected":""}>Quarterly</option><option ${sc.period==="Monthly"?"selected":""}>Monthly</option></select></div><div><label>Booster reward</label><input id="s_reward" value="${sc.reward||"Top scorer reward"}"></div></div><div class="row" style="margin-top:6px"><div><label>Reward goal — gift ₹ to win</label><input type="number" id="s_goal" value="${sc.rewardGoal!=null?sc.rewardGoal:5000}"></div><div></div></div>`;
@@ -609,7 +610,7 @@ function saveScheme(silent){
   const ep=readEditorProducts();
   const sc={products:ep.prods,targets:ep.tg,rate:ep.rt};
   sc.convM={};editorProducts.forEach((p,i)=>{const nm=((document.getElementById("n_"+i)||{}).value||"").trim();if(!nm)return;const o={};SOURCES.forEach((s,si)=>{o[s]=v("cm_"+i+"_"+si);});sc.convM[nm]=o;});
-  sc.actpoints={sale:v("ap_sale"),review:v("ap_review"),location:v("ap_location"),followup:v("ap_followup")};
+  sc.actpoints={sale:v("ap_sale"),greview:v("ap_greview"),video:v("ap_video"),location:v("ap_location"),followup:v("ap_followup")};
   sc.convFlat=v("s_flat");sc.pointValue=+((document.getElementById("s_pv")||{}).value)||0.10;
   sc.period=document.getElementById("s_period").value;sc.reward=document.getElementById("s_reward").value;sc.rewardGoal=v("s_goal");
   localStorage.setItem(SKEY,JSON.stringify(sc));if(!silent)toast("Scheme saved","ok");renderTargets();
@@ -738,7 +739,8 @@ function approveQuote(id){if(role!=="Owner")return toast("Owner approval only","
 function rejectQuote(id){if(role!=="Owner")return toast("Owner approval only","err");setQuoteStatus(id,"Rejected");}
 function closeSite(id){
   const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]");const q=Q.find(x=>x.id===id);if(!q)return;
-  if(!confirm("Site finished for "+q.cust+"?\n\nClosing is allowed only with a Google review AND a customer video.\nTap OK once the Google review has been collected, then attach the video.")){return;}
+  if(!confirm("Site finished for "+q.cust+"?")){return;}
+  if(!confirm("Google review collected from the customer?\n\nOK = Yes, the Google review is done.\nCancel = not yet (cannot close).")){toast("Google review is required to close the site","err");return;}
   pendingCloseQuote=id;document.getElementById("qvid").value="";document.getElementById("qvid").click();
 }
 function onCloseVideo(ev){
@@ -818,6 +820,7 @@ function renderAttToday(){const box=document.getElementById("attToday");if(!box)
 function renderAttDash(){const box=document.getElementById("attDash");if(!box)return;const a=getAtt().filter(x=>x.date===todayStr());if(!a.length){box.innerHTML='<p class="note">No attendance today.</p>';return;}const by={};a.forEach(x=>{by[x.staff]=by[x.staff]||{};if(x.type==="in"&&!by[x.staff].in)by[x.staff].in=x;if(x.type==="out")by[x.staff].out=x;});box.innerHTML=`<div style="overflow-x:auto"><table><tr><th class="l">Staff</th><th>In</th><th>Out</th><th>Hours</th><th class="l">Location</th></tr>`+Object.keys(by).map(s=>{const i=by[s].in,o=by[s].out;const hrs=(i&&o)?((o.ts-i.ts)/3600000).toFixed(1):"—";const w=i?(i.where||""):"";return `<tr><td class="l">${s}</td><td>${i?i.time:"—"}</td><td style="${i&&!o?"color:var(--red);font-weight:700":""}">${o?o.time:(i?"⚠ no out":"—")}</td><td>${hrs}</td><td class="l" style="${i&&i.flag?"color:var(--red);font-weight:700":""}">${w}</td></tr>`;}).join("")+`</table></div>`;}
 function setStoreLoc(){if(!navigator.geolocation)return toast("No GPS on this device","err");toast("Capturing store location…","ok");navigator.geolocation.getCurrentPosition(p=>{const s=getSettings();s.shop=s.shop||{};s.shop.lat=p.coords.latitude.toFixed(6);s.shop.lng=p.coords.longitude.toFixed(6);localStorage.setItem("ccs_settings",JSON.stringify(s));toast("Store location saved","ok");renderSettings();},e=>toast("Failed: "+e.message,"err"),{enableHighAccuracy:true,timeout:10000});}
 function fillSelect(id,arr){const el=document.getElementById(id);if(el)el.innerHTML=arr.map(x=>`<option>${x}</option>`).join("")}
+function addProductQuick(){const name=prompt("New product name:");if(!name||!name.trim())return;const sc=getScheme();const list=(sc.products&&sc.products.length?sc.products:PRODUCTS).slice();if(list.indexOf(name.trim())<0)list.push(name.trim());sc.products=list;localStorage.setItem(SKEY,JSON.stringify(sc));toast("Added: "+name.trim(),"ok");fillSelect("f_prod",getProducts());}
 function fillStaffSelects(){const st=getStaff();["f_staff","att_staff","q_staff"].forEach(id=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;fillSelect(id,st);if(cur&&st.indexOf(cur)>=0)el.value=cur;});}
 idb.open();
 fillStaffSelects();fillSelect("f_prod",getProducts());renderAttToday();
