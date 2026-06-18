@@ -291,6 +291,7 @@
     <label><input type="checkbox" id="req_loc" style="width:auto;margin-right:8px">Location capture — required while Open</label>
     <label><input type="checkbox" id="req_reviewClose" style="width:auto;margin-right:8px">Google review — required before Close</label>
     <label><input type="checkbox" id="req_videoClose" style="width:auto;margin-right:8px">Customer video — required before Close</label>
+    <label><input type="checkbox" id="req_visitOtp" style="width:auto;margin-right:8px">Customer OTP — verify every site visit (Punch)</label>
     <button class="btn green" onclick="saveSettings()">💾 Save settings</button>
   </div>
   <div class="card">
@@ -356,7 +357,7 @@ function applyReset(){var T=resetEpoch();if(!T)return;["ccs_entries_v2","ccs_quo
 function resetGoLive(){if(role!=="Owner")return toast("Owner only","err");if(!confirm("RESET all punches, quotes, attendance & leads to ZERO for go-live?\n\nYour scheme, staff & settings are KEPT. This applies to ALL devices."))return;if(!confirm("Are you sure? This cannot be undone."))return;localStorage.setItem("ccs_reset",String(Date.now()));applyReset();toast("All transaction data reset to zero","ok");try{renderRecent();renderDash();renderQuoteRecent();}catch(e){}}
 function getScheme(){try{return Object.assign({},DEFAULT_SCHEME,JSON.parse(localStorage.getItem(SKEY)))||DEFAULT_SCHEME}catch(e){return DEFAULT_SCHEME}}
 function getProducts(){const sc=getScheme();return (sc.products&&sc.products.length)?sc.products:PRODUCTS;}
-function getSettings(){const dr={phone:true,item:true,qty:true,quote:true,loc:true,reviewClose:true,videoClose:true};const d={shop:{name:"Chandra Color Shoppee",address:"",phone:"",gst:"",review:"",lat:"27.202222",lng:"77.942500"},staff:STAFF,req:dr,sms:{}};try{const s=JSON.parse(localStorage.getItem("ccs_settings"));if(!s)return d;return {shop:Object.assign({},d.shop,s.shop||{}),staff:(s.staff&&s.staff.length)?s.staff:STAFF,req:Object.assign({},dr,s.req||{}),sms:Object.assign({},s.sms||{})};}catch(e){return d;}}
+function getSettings(){const dr={phone:true,item:true,qty:true,quote:true,loc:true,reviewClose:true,videoClose:true,visitOtp:true};const d={shop:{name:"Chandra Color Shoppee",address:"",phone:"",gst:"",review:"",lat:"27.202222",lng:"77.942500"},staff:STAFF,req:dr,sms:{}};try{const s=JSON.parse(localStorage.getItem("ccs_settings"));if(!s)return d;return {shop:Object.assign({},d.shop,s.shop||{}),staff:(s.staff&&s.staff.length)?s.staff:STAFF,req:Object.assign({},dr,s.req||{}),sms:Object.assign({},s.sms||{})};}catch(e){return d;}}
 function reqs(){return getSettings().req||{};}
 function getStaff(){const s=getSettings();return (s.staff&&s.staff.length)?s.staff:STAFF;}
 /* ===== Firebase cloud sync ===== */
@@ -536,6 +537,16 @@ function savePunch(){
     if(R.reviewClose&&e.rev!=="Y")return toast("Google review is mandatory before closing the site","err");
     if(R.videoClose&&e.video!=="Y")return toast("Customer video feedback is mandatory before closing the site","err");
   }
+  if(R.visitOtp&&!window._visitOtpOk){
+    var _otp=(""+Math.floor(100000+Math.random()*900000));
+    sendOtp(e.phone,_otp).then(function(){
+      var _en=prompt("Site-visit OTP — ask the customer ("+e.phone+") for the code sent to their phone to verify this visit:");
+      if(_en==null)return;
+      if((_en||"").trim()!==_otp)return toast("Wrong customer OTP — visit not logged","err");
+      window._visitOtpOk=true;savePunch();
+    });
+    return;
+  }
   if(e.quote>0){
     window._pendingPunch={staff:e.staff,src:e.src,by:e.by,date:e.date,phone:e.phone,cust:e.cust,prod:e.prod,item:e.item,qty:e.qty,unit:e.unit};
     show("quote");
@@ -545,7 +556,7 @@ function savePunch(){
   }
   const a=load();a.push(e);save(a);
   if(pendingVideo)idb.put(e.id,pendingVideo);
-  clearForm();toast("✓ Punched!","ok");renderRecent();
+  window._visitOtpOk=false;clearForm();toast("✓ Punched!","ok");renderRecent();
 }
 function clearForm(){
   ["f_cust","f_phone","f_item","f_qty","f_quote","f_sale","f_collected","f_labor","f_rem"].forEach(id=>document.getElementById(id).value="");
@@ -933,7 +944,7 @@ function renderSettings(){
   const stx=document.getElementById("storeLocTxt");if(stx)stx.textContent=(s.shop.lat&&s.shop.lng)?("Set: "+s.shop.lat+", "+s.shop.lng):"Not set — stand at the store and tap Set to here";
   const sr=document.getElementById("set_radius");if(sr)sr.value=(s.shop.attRadius||200);
   editStaff=getStaff().slice();drawStaff();
-  const RR=getSettings().req||{};["phone","item","qty","quote","loc","reviewClose","videoClose"].forEach(k=>{const el=document.getElementById("req_"+k);if(el)el.checked=RR[k]!==false;});
+  const RR=getSettings().req||{};["phone","item","qty","quote","loc","reviewClose","videoClose","visitOtp"].forEach(k=>{const el=document.getElementById("req_"+k);if(el)el.checked=RR[k]!==false;});
   const fc=document.getElementById("fb_cfg");if(fc){try{fc.value=JSON.stringify(fbCfg(),null,2);}catch(e){}}
   const fsh=document.getElementById("fb_shop");if(fsh)fsh.value=fbShop();
   var sm=getSettings().sms||{};var setv=function(id,v){var el=document.getElementById(id);if(el)el.value=v||"";};setv("sms_key",sm.key);setv("sms_tpl",sm.tpl);setv("sms_sender",sm.sender);setv("sms_url",sm.url);setv("sms_phones",Object.keys(sm.phones||{}).map(function(k){return k+"="+sm.phones[k];}).join("\n"));
@@ -946,7 +957,7 @@ function saveSettings(){
   const staff=editStaff.map((n,i)=>((document.getElementById("st_"+i)||{}).value||"").trim()).filter(Boolean);
   const cur=getSettings().shop||{};const s={shop:{name:document.getElementById("set_name").value.trim()||"Chandra Color Shoppee",address:document.getElementById("set_addr").value.trim(),phone:document.getElementById("set_phone").value.trim(),gst:document.getElementById("set_gst").value.trim(),review:document.getElementById("set_review").value.trim(),lat:cur.lat||"",lng:cur.lng||"",attRadius:(+((document.getElementById("set_radius")||{}).value)||cur.attRadius||200)},staff:staff.length?staff:STAFF};
   const R0=getSettings().req||{};const cb=(id,k)=>{const el=document.getElementById(id);return el?!!el.checked:(R0[k]!==false);};
-  s.req={phone:cb("req_phone","phone"),item:cb("req_item","item"),qty:cb("req_qty","qty"),quote:cb("req_quote","quote"),loc:cb("req_loc","loc"),reviewClose:cb("req_reviewClose","reviewClose"),videoClose:cb("req_videoClose","videoClose")};
+  s.req={phone:cb("req_phone","phone"),item:cb("req_item","item"),qty:cb("req_qty","qty"),quote:cb("req_quote","quote"),loc:cb("req_loc","loc"),reviewClose:cb("req_reviewClose","reviewClose"),videoClose:cb("req_videoClose","videoClose"),visitOtp:cb("req_visitOtp","visitOtp")};
   s.sms=getSettings().sms||{};
   localStorage.setItem("ccs_settings",JSON.stringify(s));
   fillStaffSelects();toast("Settings saved","ok");renderSettings();
