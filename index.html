@@ -101,7 +101,7 @@
     <label>Lead source</label>
     <select id="f_src"><option>Walk-in</option><option>Cold call</option><option>Social media</option><option>Owner reference</option><option>Old lead</option><option>Other</option></select>
     <label>Converted by</label>
-    <select id="f_by"><option>Staff</option><option>Owner</option></select>
+    <select id="f_by"></select>
     <div class="row">
       <div><label>Customer name <span class="req">*</span></label><input id="f_cust" placeholder="e.g. Mr. Sharma"></div>
       <div><label>Contact no. <span class="req">*</span></label><input id="f_phone" inputmode="tel" placeholder="98xxxxxxxx"></div>
@@ -472,7 +472,7 @@ function savePunch(){
 }
 function clearForm(){
   ["f_cust","f_phone","f_item","f_qty","f_quote","f_sale","f_collected","f_labor","f_rem"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("f_rev").value="N";document.getElementById("f_status").value="Open";document.getElementById("f_src").value="Walk-in";document.getElementById("f_by").value="Staff";
+  document.getElementById("f_rev").value="N";document.getElementById("f_status").value="Open";document.getElementById("f_src").value="Walk-in";var _fb=document.getElementById("f_by");if(_fb)_fb.value=document.getElementById("f_staff").value;
   document.getElementById("f_video").value="";document.getElementById("videoState").textContent="";
   pendingFu=[];pendingVideo=null;resetGeo();renderFuChips();updateGate();
 }
@@ -511,6 +511,7 @@ function openDetail(id){
       ${["Open","Following up","Hot lead","Closed","Lost"].map(s=>`<option ${s===e.status?"selected":""}>${s}</option>`).join("")}</select></div></div>
     <button class="btn" onclick="updateStatus('${id}')">Save status</button>
     <button class="btn ghost" onclick="closeModal()">Close</button>
+    ${role==="Owner"?`<button class="btn ghost" onclick="editEntry('${id}')">✏️ Edit all details (Owner)</button>`:""}
     <button class="btn ghost" style="color:var(--red)" onclick="delEntry('${id}')">Delete entry</button>
   </div></div>`;
 }
@@ -528,7 +529,40 @@ function updateStatus(id){
   if(["Open","Following up","Hot lead"].includes(ns)){const miss=[];if(R.phone&&!e.phone)miss.push("phone");if(R.quote&&!(e.quote>0))miss.push("quote value");if(R.loc&&!e.lat)miss.push("location");if(miss.length)return toast("Required while Open: "+miss.join(", "),"err");}
   e.status=ns;save(a);toast("Status updated","ok");closeModal();renderRecent();
 }
-function delEntry(id){if(!confirm("Delete this entry?"))return;save(load().filter(x=>x.id!==id));closeModal();renderRecent();}
+function delEntry(id){if(!confirm("Delete this entry?"))return;save(load().filter(x=>x.id!==id));closeModal();renderRecent();renderDash();}
+function editEntry(id){
+  if(role!=="Owner")return toast("Owner only","err");
+  var e=load().find(function(x){return x.id===id;});if(!e)return;
+  var P=getProducts(),SR=(typeof SOURCES!=="undefined"?SOURCES:["Walk-in","Cold call","Other"]);
+  var opt=function(arr,v){return arr.map(function(o){return `<option ${o===v?"selected":""}>${o}</option>`;}).join("");};
+  var q=function(v){return String(v==null?"":v).replace(/"/g,"&quot;");};
+  document.getElementById("modalHost").innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="sheet">
+    <h2>Edit all details (Owner)</h2>
+    <div class="row"><div><label>Customer</label><input id="ed_cust" value="${q(e.cust)}"></div><div><label>Contact</label><input id="ed_phone" value="${q(e.phone)}"></div></div>
+    <div class="row"><div><label>Date</label><input type="date" id="ed_date" value="${e.date||''}"></div><div><label>Staff</label><select id="ed_staff">${opt(getStaff(),e.staff)}</select></div></div>
+    <div class="row"><div><label>Activity</label><select id="ed_act">${opt(["Walk-in","Site Visit","Quotation Given","Sale Closed","Follow-up Done"],e.act)}</select></div><div><label>Status</label><select id="ed_status">${opt(["Open","Following up","Hot lead","Closed","Lost"],e.status)}</select></div></div>
+    <div class="row"><div><label>Product</label><select id="ed_prod">${opt(P,e.prod)}</select></div><div><label>Lead source</label><select id="ed_src">${opt(SR,e.src)}</select></div></div>
+    <div class="row"><div><label>Converted by</label><select id="ed_by">${opt(getStaff().concat(["Owner"]),e.by||e.staff)}</select></div><div><label>Product used</label><input id="ed_item" value="${q(e.item)}"></div></div>
+    <div class="row"><div><label>Qty</label><input type="number" id="ed_qty" value="${e.qty||0}"></div><div><label>Unit</label><input id="ed_unit" value="${q(e.unit)}"></div></div>
+    <div class="row"><div><label>Quote ₹</label><input type="number" id="ed_quote" value="${e.quote||0}"></div><div><label>Sale ₹</label><input type="number" id="ed_sale" value="${e.sale||0}"></div></div>
+    <div class="row"><div><label>Collected ₹</label><input type="number" id="ed_collected" value="${e.collected||0}"></div><div><label>Labour ₹</label><input type="number" id="ed_labor" value="${e.labor||0}"></div></div>
+    <div class="row"><div><label>Google review</label><select id="ed_rev">${opt(["N","Y"],e.rev||"N")}</select></div><div><label>Video</label><select id="ed_video">${opt(["N","Y"],e.video||"N")}</select></div></div>
+    <label>Remarks</label><input id="ed_rem" value="${q(e.rem)}">
+    <button class="btn green" onclick="saveEntryEdit('${id}')">💾 Save changes</button>
+    <button class="btn ghost" onclick="openDetail('${id}')">Cancel</button>
+  </div></div>`;
+}
+function saveEntryEdit(id){
+  if(role!=="Owner")return toast("Owner only","err");
+  var a=load(),e=a.find(function(x){return x.id===id;});if(!e)return;
+  var g=function(i){return document.getElementById(i);};
+  e.cust=g("ed_cust").value.trim();e.phone=g("ed_phone").value.trim();e.date=g("ed_date").value||e.date;e.staff=g("ed_staff").value;
+  e.act=g("ed_act").value;e.status=g("ed_status").value;e.prod=g("ed_prod").value;e.src=g("ed_src").value;e.by=g("ed_by").value;
+  e.item=g("ed_item").value.trim();e.qty=+g("ed_qty").value||0;e.unit=g("ed_unit").value;e.quote=+g("ed_quote").value||0;e.sale=+g("ed_sale").value||0;
+  e.collected=+g("ed_collected").value||0;e.labor=+g("ed_labor").value||0;e.rev=g("ed_rev").value;e.video=g("ed_video").value;e.rem=g("ed_rem").value.trim();
+  if((e.collected||e.labor)&&e.payStatus!=="Approved"&&e.payStatus!=="Rejected")e.payStatus="Pending";
+  save(a);toast("Entry updated","ok");openDetail(id);renderRecent();renderDash();
+}
 
 function dayData(d){return load().filter(e=>e.date===d)}
 function monthData(){const m=todayStr().slice(0,7);return load().filter(e=>(e.date||"").slice(0,7)===m)}
@@ -571,9 +605,10 @@ function renderTeam(){
   const totTarget=getProducts().reduce((a,p)=>a+(+sc.targets[p]||0),0);const threshold=(totTarget*3/staffCount)*gatePct/100;
   const inc=getStaff().map(s=>{let pts=0,catCash=0,saleVal=0;const r=md.filter(e=>e.staff===s);
     getProducts().forEach(p=>{const val=r.filter(e=>e.prod===p).reduce((a,e)=>a+(+e.sale||0),0);saleVal+=val;catCash+=val*((sc.rate[p]||0)/100);});
-    const fudone=r.reduce((a,e)=>a+((e.followups||[]).filter(f=>f.done).length),0);
-    pts+=r.filter(e=>e.act==="Sale Closed").length*(ap.sale||0)+r.filter(e=>e.rev==="Y").length*(ap.greview!=null?ap.greview:(ap.review||0))+r.filter(e=>e.video==="Y").length*(ap.video||0)+r.filter(e=>e.loc==="Y").length*(ap.location||0)+fudone*(ap.followup||0);
-    r.filter(e=>e.act==="Sale Closed"&&(e.by||"Staff")!=="Owner").forEach(e=>{const m=cm[e.prod]||{};pts+=(m[e.src||"Other"]||0)+flat;});
+    const rp=r.filter(e=>e.status!=="Lost"&&e.status!=="Rejected");
+    const fudone=rp.reduce((a,e)=>a+((e.followups||[]).filter(f=>f.done).length),0);
+    pts+=rp.filter(e=>e.act==="Sale Closed").length*(ap.sale||0)+rp.filter(e=>e.rev==="Y").length*(ap.greview!=null?ap.greview:(ap.review||0))+rp.filter(e=>e.video==="Y").length*(ap.video||0)+rp.filter(e=>e.loc==="Y").length*(ap.location||0)+fudone*(ap.followup||0);
+    rp.filter(e=>e.act==="Sale Closed"&&(e.by||"Staff")!=="Owner").forEach(e=>{const m=cm[e.prod]||{};pts+=(m[e.src||"Other"]||0)+flat;});
     const unlocked=(gatePct<=0)||(saleVal>=threshold);
     const giftCash=unlocked?Math.round(pts*pv):0;const total=catCash+giftCash;
     return{s,pts:Math.round(pts),ptsCash:giftCash,cat:Math.round(catCash),total:Math.round(total),left:Math.max(0,Math.round(goal-giftCash)),locked:!unlocked};});
@@ -864,7 +899,7 @@ function renderAttDash(){const box=document.getElementById("attDash");if(!box)re
 function setStoreLoc(){if(!navigator.geolocation)return toast("No GPS on this device","err");toast("Capturing store location…","ok");navigator.geolocation.getCurrentPosition(p=>{const s=getSettings();s.shop=s.shop||{};s.shop.lat=p.coords.latitude.toFixed(6);s.shop.lng=p.coords.longitude.toFixed(6);localStorage.setItem("ccs_settings",JSON.stringify(s));toast("Store location saved","ok");renderSettings();},e=>toast("Failed: "+e.message,"err"),{enableHighAccuracy:true,timeout:10000});}
 function fillSelect(id,arr){const el=document.getElementById(id);if(el)el.innerHTML=arr.map(x=>`<option>${x}</option>`).join("")}
 function addProductQuick(){const name=prompt("New product name:");if(!name||!name.trim())return;const sc=getScheme();const list=(sc.products&&sc.products.length?sc.products:PRODUCTS).slice();if(list.indexOf(name.trim())<0)list.push(name.trim());sc.products=list;localStorage.setItem(SKEY,JSON.stringify(sc));toast("Added: "+name.trim(),"ok");fillSelect("f_prod",getProducts());}
-function fillStaffSelects(){const st=getStaff();["f_staff","att_staff","q_staff"].forEach(id=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;fillSelect(id,st);if(cur&&st.indexOf(cur)>=0)el.value=cur;});}
+function fillStaffSelects(){const st=getStaff();["f_staff","att_staff","q_staff"].forEach(id=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;fillSelect(id,st);if(cur&&st.indexOf(cur)>=0)el.value=cur;});var fb=document.getElementById("f_by");if(fb){var cur=fb.value;fillSelect("f_by",st.concat(["Owner"]));if(cur)fb.value=cur;}}
 idb.open();
 fillStaffSelects();fillSelect("f_prod",getProducts());renderAttToday();
 document.getElementById("f_date").value=todayStr();
