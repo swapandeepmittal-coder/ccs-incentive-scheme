@@ -181,7 +181,7 @@
     <button class="btn green" onclick="saveQuotePunch()">✓ Save &amp; log as quotation</button>
   </div>
   <input type="file" id="qvid" accept="video/*" capture="environment" class="hide" onchange="onCloseVideo(event)">
-  <div class="card"><h3>Recent quotations</h3><div id="qrecent"></div></div>
+  <div class="card"><h3>Quotations &amp; conversion (BOQ)</h3><div id="qsummary"></div><div class="small-actions" style="margin:8px 0 4px"><button class="btn ghost sm" onclick="exportBOQ()">📋 Export BOQ + conversion (Excel)</button></div><div id="qrecent"></div></div>
 </section>
 <section id="view-dash" class="wrap hide">
   <div class="card"><div class="row" style="align-items:flex-end">
@@ -327,7 +327,7 @@ function fbCfg(){try{const s=localStorage.getItem("ccs_fb");return s?JSON.parse(
 function fbShop(){return (localStorage.getItem("ccs_shop")||DEFAULT_SHOP).toLowerCase();}
 function cloudStatus(msg,ok){const el=document.getElementById("fbStatus");if(el){el.textContent=msg;el.style.color=ok?"#166534":"#c0392b";}}
 function refreshAll(){try{fillStaffSelects();}catch(e){}try{renderRecent();}catch(e){}try{renderAttToday();}catch(e){}const vis=id=>{const el=document.getElementById(id);return el&&!el.classList.contains("hide");};try{if(vis("view-dash"))renderDash();if(vis("view-team"))renderTeam();if(vis("view-targets"))renderTargets();if(vis("view-quote"))renderQuoteRecent();if(vis("view-settings"))renderSettings();}catch(e){}}
-function mergeById(a,b){try{const A=JSON.parse(a||"[]"),B=JSON.parse(b||"[]");if(!Array.isArray(A)||!Array.isArray(B))return b;const m={};A.concat(B).forEach(x=>{if(x&&x.id!=null)m[x.id]=x;});const out=Object.keys(m).map(k=>m[k]);out.sort((x,y)=>(x.created||0)-(y.created||0));return JSON.stringify(out);}catch(e){return b||a;}}
+function mergeById(a,b){try{const A=JSON.parse(a||"[]"),B=JSON.parse(b||"[]");if(!Array.isArray(A)||!Array.isArray(B))return b;const m={};A.concat(B).forEach(x=>{if(!x||x.id==null)return;const ex=m[x.id];if(!ex){m[x.id]=x;}else if(x.deleted||ex.deleted){m[x.id]=(x.deleted?x:ex);m[x.id].deleted=true;}else{m[x.id]=((x.created||0)>=(ex.created||0))?x:ex;}});const out=Object.keys(m).map(k=>m[k]);out.sort((x,y)=>(x.created||0)-(y.created||0));return JSON.stringify(out);}catch(e){return b||a;}}
 function pushDoc(k,v){if(!fbDb)return;fbDb.collection("ccs_"+fbShop()).doc(encodeURIComponent(k)).set({v:v,u:Date.now()}).catch(()=>{});}
 function cloudInit(){
   const cfg=fbCfg();if(!cfg)return;
@@ -731,19 +731,49 @@ function saveQuotePunch(){
 }
 let pendingCloseQuote=null;
 function renderQuoteRecent(){
-  const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]").slice().reverse().slice(0,14);
-  const pill=s=>`<span class="pill ${s==="Approved"?"info":(s==="Closed"?"ok":(s==="Rejected"?"bad":"warn"))}">${s||"Pending"}</span>`;
+  const all=JSON.parse(localStorage.getItem("ccs_quotes")||"[]").filter(function(q){return !q.deleted;});
+  const conv=s=> s==="Closed"?"✅ Converted to work":((s==="Rejected"||s==="Lost")?"❌ Not converted":(s==="Approved"?"Approved — awaiting work":"🧾 Quote given"));
+  const pcls=s=> s==="Closed"?"ok":((s==="Rejected"||s==="Lost")?"bad":(s==="Approved"?"info":"warn"));
+  const cG=all.length,cC=all.filter(q=>q.status==="Closed").length,cL=all.filter(q=>q.status==="Rejected"||q.status==="Lost").length,cO=cG-cC-cL;
+  const sum=document.getElementById("qsummary");
+  if(sum)sum.innerHTML=`<div class="kpis"><div class="kpi"><div class="n">${cG}</div><div class="l">Quotes given</div></div><div class="kpi"><div class="n">${cC}</div><div class="l">Converted</div></div><div class="kpi"><div class="n">${cO}</div><div class="l">Open</div></div></div>`;
+  const Q=all.slice().reverse().slice(0,20);
   document.getElementById("qrecent").innerHTML=Q.length?Q.map(q=>{
-    const st=q.status||"Pending";
-    let actions="";
-    if(role==="Owner"&&st==="Pending")actions=`<div class="small-actions"><button class="btn green sm" onclick="approveQuote('${q.id}')">✓ Approve</button><button class="btn ghost sm" style="color:var(--red)" onclick="rejectQuote('${q.id}')">✕ Reject</button></div>`;
-    else if(st==="Approved")actions=`<div class="small-actions"><button class="btn sm" onclick="closeSite('${q.id}')">🏁 Close site (needs review + video)</button></div>`;
-    return `<div class="entry"><div class="top"><span>${q.cust} · ${q.no}</span><span class="note">${fmt(q.total)}</span></div><div class="meta">${q.date} · ${q.staff} · ${q.lines.length} item(s) · ${pill(st)}</div>${actions}</div>`;
+    const st=q.status||"Pending";let actions="";
+    if(role==="Owner"&&st==="Pending")actions=`<button class="btn green sm" onclick="approveQuote('${q.id}')">✓ Approve</button><button class="btn ghost sm" style="color:var(--red)" onclick="markQuoteLost('${q.id}')">Not converted</button>`;
+    else if(st==="Approved")actions=`<button class="btn sm" onclick="closeSite('${q.id}')">🏁 Converted — close site</button><button class="btn ghost sm" style="color:var(--red)" onclick="markQuoteLost('${q.id}')">Not converted</button>`;
+    else if(st==="Pending")actions=`<button class="btn ghost sm" style="color:var(--red)" onclick="markQuoteLost('${q.id}')">Not converted</button>`;
+    return `<div class="entry"><div class="top"><span>${q.cust} · ${q.no}</span><span class="note">${fmt(q.total)}</span></div><div class="meta">${q.date} · ${q.staff} · ${q.lines.length} item(s) · <span class="pill ${pcls(st)}">${conv(st)}</span></div><div class="small-actions"><button class="btn ghost sm" onclick="showBOQ('${q.id}')">📋 BOQ</button>${actions}${role==="Owner"?`<button class="btn ghost sm" style="color:var(--red)" onclick="deleteQuote('${q.id}')">🗑 Delete</button>`:""}</div></div>`;
   }).join(""):'<p class="note">No quotations yet. Make your first above.</p>';
 }
 function setQuoteStatus(id,st){const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]");const q=Q.find(x=>x.id===id);if(q)q.status=st;localStorage.setItem("ccs_quotes",JSON.stringify(Q));toast("Quote "+st,"ok");renderQuoteRecent();}
 function approveQuote(id){if(role!=="Owner")return toast("Owner approval only","err");setQuoteStatus(id,"Approved");}
 function rejectQuote(id){if(role!=="Owner")return toast("Owner approval only","err");setQuoteStatus(id,"Rejected");}
+function markQuoteLost(id){if(!confirm("Mark this quotation as NOT converted to work?"))return;setQuoteStatus(id,"Lost");}
+function deleteQuote(id){if(role!=="Owner")return toast("Owner only — delete not allowed","err");if(!confirm("Delete this quotation permanently?"))return;var Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]");var q=Q.find(function(x){return x.id===id;});if(q){q.deleted=true;q.created=Date.now();}localStorage.setItem("ccs_quotes",JSON.stringify(Q));toast("Quotation deleted","ok");renderQuoteRecent();}
+function showBOQ(id){
+  var q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]").find(function(x){return x.id===id;});if(!q)return;
+  var st=q.status||"Pending";
+  var conv=st==="Closed"?"✅ Converted to work":((st==="Rejected"||st==="Lost")?"❌ Not converted":"Awaiting — quote given");
+  var rowsH=(q.lines||[]).map(function(l,i){return `<tr><td>${i+1}</td><td class="l">${l.prod}${l.desc?(" — "+l.desc):""}</td><td>${l.qty} ${l.unit}</td><td>${fmt(l.rate)}</td><td>${fmt((+l.qty||0)*(+l.rate||0))}</td></tr>`;}).join("");
+  document.getElementById("modalHost").innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="sheet">
+    <h2>Bill of Quantity · ${q.no}</h2>
+    <p class="note">${q.cust} ${q.phone?("· "+q.phone):""}<br>${q.date} · ${q.staff} · <b>${conv}</b></p>
+    <div style="overflow-x:auto"><table><tr><th>#</th><th class="l">Product / description</th><th>Qty</th><th>Rate</th><th>Amount</th></tr>${rowsH}<tr><td></td><td class="l"><b>Grand Total</b></td><td></td><td></td><td><b>${fmt(q.total)}</b></td></tr></table></div>
+    <button class="btn ghost" onclick="closeModal()">Close</button>
+  </div></div>`;
+}
+function exportBOQ(){
+  var all=JSON.parse(localStorage.getItem("ccs_quotes")||"[]").filter(function(q){return !q.deleted;});if(!all.length)return toast("No quotations yet","err");
+  var esc=function(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"';};
+  var head=["QuoteNo","Date","Customer","Contact","Staff","Status","ConvertedToWork","SrNo","Product","Description","Qty","Unit","Rate","Amount","QuoteTotal"];
+  var out=[];
+  all.forEach(function(q){var c=(q.status==="Closed")?"YES":((q.status==="Rejected"||q.status==="Lost")?"NO":"PENDING");
+    (q.lines||[]).forEach(function(l,i){out.push([q.no,q.date,q.cust,q.phone,q.staff,q.status||"Pending",c,i+1,l.prod,l.desc,l.qty,l.unit,l.rate,((+l.qty||0)*(+l.rate||0)),q.total].map(esc).join(","));});
+  });
+  var csv=[head.join(",")].concat(out).join("\n");
+  var url=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));var a=document.createElement("a");a.href=url;a.download="CCS_BOQ_quotations_"+todayStr()+".csv";a.click();toast("BOQ + conversion exported","ok");
+}
 function closeSite(id){
   const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]");const q=Q.find(x=>x.id===id);if(!q)return;
   if(!confirm("Site finished for "+q.cust+"?")){return;}
