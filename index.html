@@ -159,6 +159,27 @@
 </section>
 
 <!-- DASHBOARD -->
+<!-- COUNTER / WALK-IN -->
+<section id="view-counter" class="wrap hide">
+  <div class="card">
+    <h2>🎨 Walk-in / Counter sale</h2>
+    <p class="note">Record a counter purchase &amp; the colour codes given, take a Google review or video, and earn points.</p>
+    <div class="row"><div><label>Customer name <span class="req">*</span></label><input id="w_cust" placeholder="e.g. Mr. Sharma"></div><div><label>Contact</label><input id="w_phone" inputmode="tel" placeholder="98xxxxxxxx"></div></div>
+    <div class="row"><div><label>Staff</label><select id="w_staff"></select></div><div><label>Amount (₹)</label><input type="number" id="w_amount" inputmode="numeric" placeholder="0"></div></div>
+    <label>Material / items purchased</label><input id="w_items" placeholder="e.g. Royale 4L, primer, roller">
+    <label>Colour codes / shades given</label><textarea id="w_colors" placeholder="e.g. Royale Aspira 7895; Apcolite Exterior 0356; Tractor 4521"></textarea>
+    <div class="row"><div><label>Google review collected?</label><select id="w_rev"><option>N</option><option>Y</option></select></div><div><label>Video feedback</label><input type="file" id="w_video" accept="video/*" capture="environment" onchange="onWVideo(event)"></div></div>
+    <div id="wVideoState" class="note" style="margin-top:4px"></div>
+    <label>Remarks</label><input id="w_rem">
+    <button class="btn green" onclick="saveWalkin()">✓ Save walk-in &amp; earn points</button>
+  </div>
+  <div class="card">
+    <h3>Colour-code history — search a returning customer</h3>
+    <input id="w_search" placeholder="Search by name or phone" oninput="renderWalkins()">
+    <div id="wrecent" style="margin-top:8px"></div>
+  </div>
+</section>
+
 <!-- LEADS -->
 <section id="view-leads" class="wrap hide">
   <div class="card"><h2>📥 Leads from Freshsales</h2><p class="note">New leads pushed from your CRM appear here automatically. Tap “Make quote” to start a quotation pre-filled with the customer.</p><div id="leadsList"></div></div>
@@ -280,6 +301,7 @@
 
 <nav>
   <button id="n-punch" class="on" onclick="show('punch')"><span class="ic">➕</span>Punch</button>
+  <button id="n-counter" onclick="show('counter')"><span class="ic">🎨</span>Counter</button>
   <button id="n-leads" onclick="show('leads')"><span class="ic">📥</span>Leads</button>
   <button id="n-quote" onclick="show('quote')"><span class="ic">🧾</span>Quote</button>
   <button id="n-dash" onclick="show('dash')"><span class="ic">📊</span>Dash</button>
@@ -316,7 +338,7 @@ function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){re
 function save(a){localStorage.setItem(KEY,JSON.stringify(a))}
 function timeOf(e){return (e&&(e.created||e.ts))||parseInt(String((e&&e.id)||"").replace(/[^0-9]/g,""))||0;}
 function resetEpoch(){return +localStorage.getItem("ccs_reset")||0;}
-function applyReset(){var T=resetEpoch();if(!T)return;["ccs_entries_v2","ccs_quotes","ccs_att","ccs_leads"].forEach(function(k){var arr;try{arr=JSON.parse(localStorage.getItem(k)||"[]");}catch(e){return;}if(!Array.isArray(arr))return;var keep=arr.filter(function(x){return timeOf(x)>=T;});if(keep.length!==arr.length){localStorage.setItem(k,JSON.stringify(keep));}});}
+function applyReset(){var T=resetEpoch();if(!T)return;["ccs_entries_v2","ccs_quotes","ccs_att","ccs_leads","ccs_walkins"].forEach(function(k){var arr;try{arr=JSON.parse(localStorage.getItem(k)||"[]");}catch(e){return;}if(!Array.isArray(arr))return;var keep=arr.filter(function(x){return timeOf(x)>=T;});if(keep.length!==arr.length){localStorage.setItem(k,JSON.stringify(keep));}});}
 function resetGoLive(){if(role!=="Owner")return toast("Owner only","err");if(!confirm("RESET all punches, quotes, attendance & leads to ZERO for go-live?\n\nYour scheme, staff & settings are KEPT. This applies to ALL devices."))return;if(!confirm("Are you sure? This cannot be undone."))return;localStorage.setItem("ccs_reset",String(Date.now()));applyReset();toast("All transaction data reset to zero","ok");try{renderRecent();renderDash();renderQuoteRecent();}catch(e){}}
 function getScheme(){try{return Object.assign({},DEFAULT_SCHEME,JSON.parse(localStorage.getItem(SKEY)))||DEFAULT_SCHEME}catch(e){return DEFAULT_SCHEME}}
 function getProducts(){const sc=getScheme();return (sc.products&&sc.products.length)?sc.products:PRODUCTS;}
@@ -325,7 +347,7 @@ function reqs(){return getSettings().req||{};}
 function getStaff(){const s=getSettings();return (s.staff&&s.staff.length)?s.staff:STAFF;}
 /* ===== Firebase cloud sync ===== */
 let fbDb=null,fbReady=false;const _set=localStorage.setItem.bind(localStorage);
-const SYNC_KEYS=[KEY,SKEY,"ccs_quotes","ccs_settings","ccs_pin","ccs_att","ccs_reset"];
+const SYNC_KEYS=[KEY,SKEY,"ccs_quotes","ccs_settings","ccs_pin","ccs_att","ccs_reset","ccs_walkins"];
 const DEFAULT_FB={apiKey:"AIzaSyALFLZCib9GzISV25bHxa3mvHL8mwFwtyQ",authDomain:"ccs-incentive-scheme.firebaseapp.com",projectId:"ccs-incentive-scheme",storageBucket:"ccs-incentive-scheme.firebasestorage.app",messagingSenderId:"377632444189",appId:"1:377632444189:web:c6fa400770568064281bf4"};
 const DEFAULT_SHOP="ccs1";
 function fbCfg(){try{const s=localStorage.getItem("ccs_fb");return s?JSON.parse(s):DEFAULT_FB;}catch(e){return DEFAULT_FB;}}
@@ -346,7 +368,7 @@ function cloudInit(){
     SYNC_KEYS.forEach(k=>{
       const ref=fbDb.collection(coll).doc(encodeURIComponent(k));
       ref.get().then(d=>{if(!d.exists){const lv=localStorage.getItem(k);if(lv!=null)pushDoc(k,lv);}}).catch(()=>{});
-      ref.onSnapshot(d=>{if(!d.exists)return;const v=d.data().v;if(v==null)return;if(k===KEY||k==="ccs_quotes"||k==="ccs_att"){const merged=mergeById(localStorage.getItem(k),v);if(merged!==localStorage.getItem(k)){_set(k,merged);refreshAll();}if(merged!==v){pushDoc(k,merged);}}else{if(v!==localStorage.getItem(k)){_set(k,v);refreshAll();}}},err=>cloudStatus("Sync error: "+(err.code||err.message),false));
+      ref.onSnapshot(d=>{if(!d.exists)return;const v=d.data().v;if(v==null)return;if(k===KEY||k==="ccs_quotes"||k==="ccs_att"||k==="ccs_walkins"){const merged=mergeById(localStorage.getItem(k),v);if(merged!==localStorage.getItem(k)){_set(k,merged);refreshAll();}if(merged!==v){pushDoc(k,merged);}}else{if(v!==localStorage.getItem(k)){_set(k,v);refreshAll();}}},err=>cloudStatus("Sync error: "+(err.code||err.message),false));
     });
     fbReady=true;cloudStatus("Connected ✓ — all devices on Shop ID '"+fbShop()+"' now share data.",true);
     fbDb.collection("ccs_"+fbShop()+"_leads").onSnapshot(s=>{const arr=[];s.forEach(x=>arr.push(x.data()));_set("ccs_leads",JSON.stringify(arr));refreshAll();},function(){});
@@ -376,10 +398,10 @@ const idb={db:null,
 
 // ---- nav ----
 function show(v){
-  ["punch","leads","quote","dash","team","targets","settings"].forEach(x=>{
+  ["punch","counter","leads","quote","dash","team","targets","settings"].forEach(x=>{
     const vw=document.getElementById("view-"+x);if(vw)vw.classList.toggle("hide",x!==v);
     const nb=document.getElementById("n-"+x);if(nb)nb.classList.toggle("on",x===v);});
-  if(v==="dash")renderDash(); if(v==="team")renderTeam(); if(v==="targets")renderTargets(); if(v==="punch")renderRecent(); if(v==="quote"){initQuote();renderQuoteRecent();} if(v==="settings")renderSettings(); if(v==="leads")renderLeads();
+  if(v==="dash")renderDash(); if(v==="team")renderTeam(); if(v==="targets")renderTargets(); if(v==="punch")renderRecent(); if(v==="quote"){initQuote();renderQuoteRecent();} if(v==="settings")renderSettings(); if(v==="leads")renderLeads(); if(v==="counter")renderWalkins();
 }
 function getPin(){return localStorage.getItem("ccs_pin")||"1234";}
 function changePin(){const cur=prompt("Enter current owner PIN:");if(cur!==getPin())return toast("Wrong PIN","err");const np=prompt("New PIN (digits):");if(np&&np.trim()){localStorage.setItem("ccs_pin",np.trim());toast("Owner PIN updated","ok");}}
@@ -430,6 +452,28 @@ function renderFuChips(){
 function rmFu(i){pendingFu.splice(i,1);renderFuChips()}
 
 // ---- video ----
+let pendingWVideo=null;
+function getWalkins(){try{return JSON.parse(localStorage.getItem("ccs_walkins")||"[]");}catch(e){return[];}}
+function onWVideo(ev){var f=ev.target.files[0];if(!f)return;pendingWVideo=f;document.getElementById("wVideoState").innerHTML="🎥 Video attached: "+f.name;}
+function clearWalkin(){["w_cust","w_phone","w_amount","w_items","w_colors","w_rem"].forEach(function(i){var el=document.getElementById(i);if(el)el.value="";});var rv=document.getElementById("w_rev");if(rv)rv.value="N";var vd=document.getElementById("w_video");if(vd)vd.value="";var vs=document.getElementById("wVideoState");if(vs)vs.textContent="";pendingWVideo=null;}
+function saveWalkin(){
+  var cust=(document.getElementById("w_cust").value||"").trim();if(!cust)return toast("Enter customer name","err");
+  var rec={id:"w"+Date.now(),date:todayStr(),staff:document.getElementById("w_staff").value,cust:cust,phone:(document.getElementById("w_phone").value||"").trim(),items:(document.getElementById("w_items").value||"").trim(),colors:(document.getElementById("w_colors").value||"").trim(),amount:+document.getElementById("w_amount").value||0,rev:document.getElementById("w_rev").value,video:(pendingWVideo?"Y":"N"),videoName:(pendingWVideo?pendingWVideo.name:""),rem:(document.getElementById("w_rem").value||"").trim(),created:Date.now()};
+  var W=getWalkins();W.push(rec);localStorage.setItem("ccs_walkins",JSON.stringify(W));
+  if(pendingWVideo)idb.put("w_"+rec.id,pendingWVideo);
+  var a=load();a.push({id:"e"+Date.now(),date:rec.date,staff:rec.staff,act:"Walk-in",src:"Walk-in",by:rec.staff,cust:cust,phone:rec.phone,prod:"Counter / Retail",item:rec.colors,qty:0,unit:"",quote:0,sale:rec.amount,collected:0,labor:0,payStatus:"",rev:rec.rev,video:rec.video,loc:"N",lat:"",lng:"",maps:"",addr:"",videoName:rec.videoName,followups:[],status:"Closed",rem:"Counter walk-in",created:Date.now()});
+  save(a);
+  toast("Walk-in saved"+((rec.rev==="Y"||rec.video==="Y")?" · points earned":""),"ok");
+  clearWalkin();renderWalkins();try{renderRecent();}catch(e){}
+}
+function renderWalkins(){
+  var box=document.getElementById("wrecent");if(!box)return;
+  var qx=((document.getElementById("w_search")||{}).value||"").toLowerCase().trim();
+  var W=getWalkins().slice().reverse();
+  if(qx)W=W.filter(function(r){return (r.cust||"").toLowerCase().indexOf(qx)>=0||(r.phone||"").indexOf(qx)>=0;});
+  W=W.slice(0,40);
+  box.innerHTML=W.length?W.map(function(r){return `<div class="entry"><div class="top"><span>${r.cust} ${r.phone?("· "+r.phone):""}</span><span class="note">${r.date}${r.amount?(" · "+fmt(r.amount)):""}</span></div><div class="meta">🎨 ${r.colors||"—"}${r.items?(" · "+r.items):""}<br>${r.staff||""} · Review ${r.rev||"N"} · Video ${r.video||"N"}</div></div>`;}).join(""):'<p class="note">No walk-ins yet. Saved colour codes appear here for future reference.</p>';
+}
 function onVideo(ev){const f=ev.target.files[0];if(!f)return;pendingVideo=f;document.getElementById("videoState").innerHTML="🎥 Video attached: "+f.name+" ("+Math.round(f.size/1024/1024*10)/10+" MB)";}
 
 // ---- save with validation ----
@@ -904,7 +948,7 @@ function renderAttDash(){const box=document.getElementById("attDash");if(!box)re
 function setStoreLoc(){if(!navigator.geolocation)return toast("No GPS on this device","err");toast("Capturing store location…","ok");navigator.geolocation.getCurrentPosition(p=>{const s=getSettings();s.shop=s.shop||{};s.shop.lat=p.coords.latitude.toFixed(6);s.shop.lng=p.coords.longitude.toFixed(6);localStorage.setItem("ccs_settings",JSON.stringify(s));toast("Store location saved","ok");renderSettings();},e=>toast("Failed: "+e.message,"err"),{enableHighAccuracy:true,timeout:10000});}
 function fillSelect(id,arr){const el=document.getElementById(id);if(el)el.innerHTML=arr.map(x=>`<option>${x}</option>`).join("")}
 function addProductQuick(){const name=prompt("New product name:");if(!name||!name.trim())return;const sc=getScheme();const list=(sc.products&&sc.products.length?sc.products:PRODUCTS).slice();if(list.indexOf(name.trim())<0)list.push(name.trim());sc.products=list;localStorage.setItem(SKEY,JSON.stringify(sc));toast("Added: "+name.trim(),"ok");fillSelect("f_prod",getProducts());}
-function fillStaffSelects(){const st=getStaff();["f_staff","att_staff","q_staff"].forEach(id=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;fillSelect(id,st);if(cur&&st.indexOf(cur)>=0)el.value=cur;});var fb=document.getElementById("f_by");if(fb){var cur=fb.value;fillSelect("f_by",st.concat(["Owner"]));if(cur)fb.value=cur;}}
+function fillStaffSelects(){const st=getStaff();["f_staff","att_staff","q_staff","w_staff"].forEach(id=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;fillSelect(id,st);if(cur&&st.indexOf(cur)>=0)el.value=cur;});var fb=document.getElementById("f_by");if(fb){var cur=fb.value;fillSelect("f_by",st.concat(["Owner"]));if(cur)fb.value=cur;}}
 idb.open();
 fillStaffSelects();fillSelect("f_prod",getProducts());renderAttToday();
 document.getElementById("f_date").value=todayStr();
