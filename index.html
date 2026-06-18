@@ -167,7 +167,7 @@
     <div class="row"><div><label>Customer name <span class="req">*</span></label><input id="w_cust" placeholder="e.g. Mr. Sharma"></div><div><label>Contact</label><input id="w_phone" inputmode="tel" placeholder="98xxxxxxxx"></div></div>
     <div class="row"><div><label>Staff</label><select id="w_staff"></select></div><div><label>Amount (₹)</label><input type="number" id="w_amount" inputmode="numeric" placeholder="0"></div></div>
     <label>Material / items purchased</label><input id="w_items" placeholder="e.g. Royale 4L, primer, roller">
-    <label>Colour codes / shades given</label><textarea id="w_colors" placeholder="e.g. Royale Aspira 7895; Apcolite Exterior 0356; Tractor 4521"></textarea>
+    <label>Colour codes / shades given</label><div id="w_shades"></div><button class="btn ghost sm" style="margin-top:6px" onclick="addWShade()">+ Add another shade</button>
     <div class="row"><div><label>Google review collected?</label><select id="w_rev"><option>N</option><option>Y</option></select></div><div><label>Video feedback</label><input type="file" id="w_video" accept="video/*" capture="environment" onchange="onWVideo(event)"></div></div>
     <div id="wVideoState" class="note" style="margin-top:4px"></div>
     <label>Remarks</label><input id="w_rem">
@@ -401,7 +401,7 @@ function show(v){
   ["punch","counter","leads","quote","dash","team","targets","settings"].forEach(x=>{
     const vw=document.getElementById("view-"+x);if(vw)vw.classList.toggle("hide",x!==v);
     const nb=document.getElementById("n-"+x);if(nb)nb.classList.toggle("on",x===v);});
-  if(v==="dash")renderDash(); if(v==="team")renderTeam(); if(v==="targets")renderTargets(); if(v==="punch")renderRecent(); if(v==="quote"){initQuote();renderQuoteRecent();} if(v==="settings")renderSettings(); if(v==="leads")renderLeads(); if(v==="counter")renderWalkins();
+  if(v==="dash")renderDash(); if(v==="team")renderTeam(); if(v==="targets")renderTargets(); if(v==="punch")renderRecent(); if(v==="quote"){initQuote();renderQuoteRecent();} if(v==="settings")renderSettings(); if(v==="leads")renderLeads(); if(v==="counter"){if(!document.querySelector("#w_shades [id^=ws_]"))initShades();renderWalkins();}
 }
 function getPin(){return localStorage.getItem("ccs_pin")||"1234";}
 function changePin(){const cur=prompt("Enter current owner PIN:");if(cur!==getPin())return toast("Wrong PIN","err");const np=prompt("New PIN (digits):");if(np&&np.trim()){localStorage.setItem("ccs_pin",np.trim());toast("Owner PIN updated","ok");}}
@@ -455,10 +455,15 @@ function rmFu(i){pendingFu.splice(i,1);renderFuChips()}
 let pendingWVideo=null;
 function getWalkins(){try{return JSON.parse(localStorage.getItem("ccs_walkins")||"[]");}catch(e){return[];}}
 function onWVideo(ev){var f=ev.target.files[0];if(!f)return;pendingWVideo=f;document.getElementById("wVideoState").innerHTML="🎥 Video attached: "+f.name;}
-function clearWalkin(){["w_cust","w_phone","w_amount","w_items","w_colors","w_rem"].forEach(function(i){var el=document.getElementById(i);if(el)el.value="";});var rv=document.getElementById("w_rev");if(rv)rv.value="N";var vd=document.getElementById("w_video");if(vd)vd.value="";var vs=document.getElementById("wVideoState");if(vs)vs.textContent="";pendingWVideo=null;}
+function clearWalkin(){["w_cust","w_phone","w_amount","w_items","w_rem"].forEach(function(i){var el=document.getElementById(i);if(el)el.value="";});var rv=document.getElementById("w_rev");if(rv)rv.value="N";var vd=document.getElementById("w_video");if(vd)vd.value="";var vs=document.getElementById("wVideoState");if(vs)vs.textContent="";pendingWVideo=null;initShades();}
+var wCount=0;
+function addWShade(area,prod,shade){var box=document.getElementById("w_shades");if(!box)return;var i=wCount++;var qq=function(v){return String(v==null?"":v).replace(/"/g,"&quot;");};var div=document.createElement("div");div.className="ftc";div.id="ws_"+i;div.style.marginTop="6px";div.innerHTML=`<div class="row"><div><label>Area / surface</label><input id="wsa_${i}" value="${qq(area)}" placeholder="e.g. Living room / exterior"></div><div><label>Product</label><input id="wsp_${i}" value="${qq(prod)}" placeholder="e.g. Royale Aspira"></div></div><div class="row"><div style="flex:4"><label>Shade name / code</label><input id="wss_${i}" value="${qq(shade)}" placeholder="e.g. 7895 / Misty Morning"></div><div style="flex:1;display:flex;align-items:flex-end;justify-content:center"><button class="btn ghost sm" style="color:var(--red)" onclick="var el=document.getElementById('ws_${i}');if(el)el.remove();">✕</button></div></div>`;box.appendChild(div);}
+function initShades(){var box=document.getElementById("w_shades");if(box){box.innerHTML="";wCount=0;addWShade();}}
+function readShades(){var box=document.getElementById("w_shades");if(!box)return[];var rows=box.querySelectorAll("[id^=ws_]");var out=[];rows.forEach(function(r){var i=r.id.split("_")[1];var a=((document.getElementById("wsa_"+i)||{}).value||"").trim();var p=((document.getElementById("wsp_"+i)||{}).value||"").trim();var s=((document.getElementById("wss_"+i)||{}).value||"").trim();if(a||p||s)out.push({area:a,product:p,shade:s});});return out;}
 function saveWalkin(){
   var cust=(document.getElementById("w_cust").value||"").trim();if(!cust)return toast("Enter customer name","err");
-  var rec={id:"w"+Date.now(),date:todayStr(),staff:document.getElementById("w_staff").value,cust:cust,phone:(document.getElementById("w_phone").value||"").trim(),items:(document.getElementById("w_items").value||"").trim(),colors:(document.getElementById("w_colors").value||"").trim(),amount:+document.getElementById("w_amount").value||0,rev:document.getElementById("w_rev").value,video:(pendingWVideo?"Y":"N"),videoName:(pendingWVideo?pendingWVideo.name:""),rem:(document.getElementById("w_rem").value||"").trim(),created:Date.now()};
+  var _sh=readShades();var _cs=_sh.map(function(x){return [x.area,x.product,x.shade].filter(Boolean).join(" - ");}).join("; ");
+  var rec={id:"w"+Date.now(),date:todayStr(),staff:document.getElementById("w_staff").value,cust:cust,phone:(document.getElementById("w_phone").value||"").trim(),items:(document.getElementById("w_items").value||"").trim(),colors:_cs,shades:_sh,amount:+document.getElementById("w_amount").value||0,rev:document.getElementById("w_rev").value,video:(pendingWVideo?"Y":"N"),videoName:(pendingWVideo?pendingWVideo.name:""),rem:(document.getElementById("w_rem").value||"").trim(),created:Date.now()};
   var W=getWalkins();W.push(rec);localStorage.setItem("ccs_walkins",JSON.stringify(W));
   if(pendingWVideo)idb.put("w_"+rec.id,pendingWVideo);
   var a=load();a.push({id:"e"+Date.now(),date:rec.date,staff:rec.staff,act:"Walk-in",src:"Walk-in",by:rec.staff,cust:cust,phone:rec.phone,prod:"Counter / Retail",item:rec.colors,qty:0,unit:"",quote:0,sale:rec.amount,collected:0,labor:0,payStatus:"",rev:rec.rev,video:rec.video,loc:"N",lat:"",lng:"",maps:"",addr:"",videoName:rec.videoName,followups:[],status:"Closed",rem:"Counter walk-in",created:Date.now()});
@@ -472,7 +477,7 @@ function renderWalkins(){
   var W=getWalkins().slice().reverse();
   if(qx)W=W.filter(function(r){return (r.cust||"").toLowerCase().indexOf(qx)>=0||(r.phone||"").indexOf(qx)>=0;});
   W=W.slice(0,40);
-  box.innerHTML=W.length?W.map(function(r){return `<div class="entry"><div class="top"><span>${r.cust} ${r.phone?("· "+r.phone):""}</span><span class="note">${r.date}${r.amount?(" · "+fmt(r.amount)):""}</span></div><div class="meta">🎨 ${r.colors||"—"}${r.items?(" · "+r.items):""}<br>${r.staff||""} · Review ${r.rev||"N"} · Video ${r.video||"N"}</div></div>`;}).join(""):'<p class="note">No walk-ins yet. Saved colour codes appear here for future reference.</p>';
+  box.innerHTML=W.length?W.map(function(r){return `<div class="entry"><div class="top"><span>${r.cust} ${r.phone?("· "+r.phone):""}</span><span class="note">${r.date}${r.amount?(" · "+fmt(r.amount)):""}</span></div><div class="meta">${r.shades&&r.shades.length?r.shades.map(function(x){return "🎨 "+[x.area,x.product,x.shade].filter(Boolean).join(" — ");}).join("<br>"):("🎨 "+(r.colors||"—"))}${r.items?("<br>🛒 "+r.items):""}<br>${r.staff||""} · Review ${r.rev||"N"} · Video ${r.video||"N"}</div></div>`;}).join(""):'<p class="note">No walk-ins yet. Saved colour codes appear here for future reference.</p>';
 }
 function onVideo(ev){const f=ev.target.files[0];if(!f)return;pendingVideo=f;document.getElementById("videoState").innerHTML="🎥 Video attached: "+f.name+" ("+Math.round(f.size/1024/1024*10)/10+" MB)";}
 
