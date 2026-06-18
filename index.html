@@ -295,8 +295,12 @@
     <button class="btn green" onclick="saveSettings()">💾 Save settings</button>
   </div>
   <div class="card">
-    <h2>📲 SMS / OTP for attendance <span class="pill info">Owner</span></h2>
-    <p class="note">Staff verify check-in / check-out with an OTP texted to their phone. Add your SMS gateway (e.g. MSG91) below. Leave blank to run in test mode (OTP shown on screen).</p>
+    <h2>📲 WhatsApp / SMS OTP <span class="pill info">Owner</span></h2>
+    <p class="note">OTPs verify attendance check-in/out and each site visit. <b>WhatsApp (Meta):</b> deploy the relay (see WhatsApp_OTP_Setup.md) and paste its URL below — Meta's API can't be called from the page directly. Leave everything blank for test mode (OTP shown on screen).</p>
+    <label>WhatsApp relay URL (Meta Cloud API)</label><input id="sms_relay" placeholder="https://your-worker.workers.dev/send">
+    <label>Relay shared secret</label><input id="sms_secret" placeholder="must match the secret set in the relay">
+    <hr style="border:none;border-top:1px solid var(--line);margin:12px 0">
+    <p class="note">Or use an SMS gateway (e.g. MSG91) instead:</p>
     <label>Gateway API key (authkey)</label><input id="sms_key" placeholder="your SMS gateway auth key">
     <div class="row"><div><label>Template ID</label><input id="sms_tpl" placeholder="OTP template id"></div><div><label>Sender ID</label><input id="sms_sender" placeholder="e.g. CCSPNT"></div></div>
     <label>Send URL (optional — default MSG91)</label><input id="sms_url" placeholder="https://control.msg91.com/api/v5/otp">
@@ -947,7 +951,7 @@ function renderSettings(){
   const RR=getSettings().req||{};["phone","item","qty","quote","loc","reviewClose","videoClose","visitOtp"].forEach(k=>{const el=document.getElementById("req_"+k);if(el)el.checked=RR[k]!==false;});
   const fc=document.getElementById("fb_cfg");if(fc){try{fc.value=JSON.stringify(fbCfg(),null,2);}catch(e){}}
   const fsh=document.getElementById("fb_shop");if(fsh)fsh.value=fbShop();
-  var sm=getSettings().sms||{};var setv=function(id,v){var el=document.getElementById(id);if(el)el.value=v||"";};setv("sms_key",sm.key);setv("sms_tpl",sm.tpl);setv("sms_sender",sm.sender);setv("sms_url",sm.url);setv("sms_phones",Object.keys(sm.phones||{}).map(function(k){return k+"="+sm.phones[k];}).join("\n"));
+  var sm=getSettings().sms||{};var setv=function(id,v){var el=document.getElementById(id);if(el)el.value=v||"";};setv("sms_key",sm.key);setv("sms_tpl",sm.tpl);setv("sms_sender",sm.sender);setv("sms_url",sm.url);setv("sms_relay",sm.relay);setv("sms_secret",sm.secret);setv("sms_phones",Object.keys(sm.phones||{}).map(function(k){return k+"="+sm.phones[k];}).join("\n"));
   if(fbReady)cloudStatus("Connected ✓ — Shop ID '"+fbShop()+"'.",true);
 }
 function drawStaff(){document.getElementById("staffList").innerHTML=editStaff.map((n,i)=>`<div class="row" style="margin-bottom:6px;align-items:center"><div style="flex:5"><input id="st_${i}" value="${(n||"").replace(/"/g,"&quot;")}"></div><div style="flex:1;text-align:center"><span style="color:var(--red);font-weight:800;cursor:pointer" onclick="rmStaff(${i})">✕</span></div></div>`).join("");}
@@ -962,7 +966,7 @@ function saveSettings(){
   localStorage.setItem("ccs_settings",JSON.stringify(s));
   fillStaffSelects();toast("Settings saved","ok");renderSettings();
 }
-function saveSms(){var s=getSettings();var lines=((document.getElementById("sms_phones")||{}).value||"").split("\n");var ph={};lines.forEach(function(l){var i=l.indexOf("=");if(i>0){var n=l.slice(0,i).trim();var num=l.slice(i+1).trim();if(n&&num)ph[n]=num;}});s.sms={key:((document.getElementById("sms_key")||{}).value||"").trim(),tpl:((document.getElementById("sms_tpl")||{}).value||"").trim(),sender:((document.getElementById("sms_sender")||{}).value||"").trim(),url:((document.getElementById("sms_url")||{}).value||"").trim(),phones:ph};localStorage.setItem("ccs_settings",JSON.stringify(s));toast("SMS / OTP settings saved","ok");}
+function saveSms(){var s=getSettings();var lines=((document.getElementById("sms_phones")||{}).value||"").split("\n");var ph={};lines.forEach(function(l){var i=l.indexOf("=");if(i>0){var n=l.slice(0,i).trim();var num=l.slice(i+1).trim();if(n&&num)ph[n]=num;}});s.sms={relay:((document.getElementById("sms_relay")||{}).value||"").trim(),secret:((document.getElementById("sms_secret")||{}).value||"").trim(),key:((document.getElementById("sms_key")||{}).value||"").trim(),tpl:((document.getElementById("sms_tpl")||{}).value||"").trim(),sender:((document.getElementById("sms_sender")||{}).value||"").trim(),url:((document.getElementById("sms_url")||{}).value||"").trim(),phones:ph};localStorage.setItem("ccs_settings",JSON.stringify(s));toast("SMS / OTP settings saved","ok");}
 function loginAs(r){
   if(r==="Owner"){const p=prompt("Enter Owner PIN (default 1234):");if(p===null)return;if(p!==getPin()){alert("Wrong PIN");return;}role="Owner";}
   else{role="Staff";}
@@ -987,7 +991,10 @@ function rejectPay(id){if(role!=="Owner")return toast("Owner only","err");const 
 function getAtt(){try{return JSON.parse(localStorage.getItem("ccs_att")||"[]");}catch(e){return[];}}
 function nearestCustomer(lat,lng){let best=null;load().forEach(e=>{if(e.lat&&e.lng){const d=distM(+e.lat,+e.lng,+lat,+lng);if(d<=250&&(!best||d<best.dist))best={name:e.cust||"site",dist:d};}});return best;}
 function smsCfg(){return getSettings().sms||{};}
-function sendOtp(phone,otp){var c=smsCfg();if(!c.key||!phone){alert("OTP (test mode — no SMS gateway set in Setup):  "+otp+"\n\nOwner: add your SMS gateway under Setup → SMS / OTP to text real codes to staff phones.");return Promise.resolve(true);}var url=(c.url||"https://control.msg91.com/api/v5/otp")+"?authkey="+encodeURIComponent(c.key)+"&template_id="+encodeURIComponent(c.tpl||"")+"&mobile=91"+encodeURIComponent(phone)+"&otp="+otp+(c.sender?("&sender="+encodeURIComponent(c.sender)):"");return fetch(url,{method:"GET"}).then(function(){return true;}).catch(function(){alert("Could not reach the SMS gateway from the browser. OTP for manual entry: "+otp);return true;});}
+function sendOtp(phone,otp){var c=smsCfg();
+  if(c.relay&&phone){return fetch(c.relay,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mobile:(""+phone),otp:otp,secret:c.secret||""})}).then(function(r){if(!r.ok)throw 0;return true;}).catch(function(){alert("Could not reach the WhatsApp relay. OTP for manual entry: "+otp);return true;});}
+  if(c.key&&phone){var url=(c.url||"https://control.msg91.com/api/v5/otp")+"?authkey="+encodeURIComponent(c.key)+"&template_id="+encodeURIComponent(c.tpl||"")+"&mobile=91"+encodeURIComponent(phone)+"&otp="+otp+(c.sender?("&sender="+encodeURIComponent(c.sender)):"");return fetch(url,{method:"GET"}).then(function(){return true;}).catch(function(){alert("Could not reach the SMS gateway from the browser. OTP for manual entry: "+otp);return true;});}
+  alert("OTP (test mode — no WhatsApp relay / SMS gateway set in Setup):  "+otp+"\n\nOwner: add your WhatsApp relay URL under Setup → WhatsApp / SMS OTP to send real codes.");return Promise.resolve(true);}
 let pendingOtp=null;
 function markAtt(type){var sel=document.getElementById("att_staff");var staff=sel?sel.value:getStaff()[0];var c=smsCfg();var ph=(c.phones&&c.phones[staff])||"";var otp=(""+Math.floor(100000+Math.random()*900000));toast("Sending OTP"+(ph?(" to "+ph):"")+"…","ok");sendOtp(ph,otp).then(function(){var ent=prompt("Enter the 6-digit OTP"+(ph?(" sent to "+ph):"")+" to check "+(type==="in"?"IN":"OUT")+":");if(ent==null)return;if((ent||"").trim()!==otp)return toast("Wrong OTP — attendance not marked","err");doMarkAtt(type,staff);});}
 function doMarkAtt(type,staff){
