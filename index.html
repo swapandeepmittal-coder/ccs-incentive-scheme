@@ -615,14 +615,28 @@ function saveEntryEdit(id){
 
 function dayData(d){return load().filter(e=>e.date===d)}
 function monthData(){const m=todayStr().slice(0,7);return load().filter(e=>(e.date||"").slice(0,7)===m)}
+function kpiDetail(type){
+  var d=document.getElementById("d_date").value||todayStr();var rows=dayData(d);var f,title;
+  if(type==="walk"){f=function(e){return e.act==="Walk-in";};title="Walk-ins";}
+  else if(type==="quote"){f=function(e){return e.act==="Quotation Given";};title="Quotations given";}
+  else if(type==="sale"){f=function(e){return e.act==="Sale Closed";};title="Sales closed";}
+  else if(type==="value"){f=function(e){return (+e.sale||0)>0;};title="Sales value";}
+  else if(type==="review"){f=function(e){return e.rev==="Y";};title="Google reviews";}
+  else if(type==="loc"){f=function(e){return e.loc==="Y";};title="Locations tagged";}
+  else if(type==="video"){f=function(e){return e.video==="Y";};title="Customer videos";}
+  else{f=function(){return true;};title="All entries";}
+  var list=rows.filter(f);
+  var html=list.length?list.map(function(e){return `<div class="entry" onclick="openDetail('${e.id}')"><div class="top"><span>${e.cust||"—"} · ${e.prod||""}</span><span class="note">${e.staff||""}</span></div><div class="meta">${e.act}${e.sale?(" · Sale "+fmt(e.sale)):(e.quote?(" · Quote "+fmt(e.quote)):"")}${e.src?(" · "+e.src):""}${e.by?(" · by "+e.by):""} · ${statusPill(e.status)}</div></div>`;}).join(""):'<p class="note">Nothing for this day.</p>';
+  document.getElementById("modalHost").innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="sheet"><h2>${title} · ${d}</h2>${html}<button class="btn ghost" onclick="closeModal()">Close</button></div></div>`;
+}
 function renderDash(){
   const d=document.getElementById("d_date").value||todayStr(),rows=dayData(d);
   const walk=rows.filter(e=>e.act==="Walk-in").length,quotes=rows.filter(e=>e.act==="Quotation Given").length;
   const closed=rows.filter(e=>e.act==="Sale Closed").length,saleVal=rows.reduce((s,e)=>s+(+e.sale||0),0);
   const conv=walk?Math.round(closed/walk*100):0,revs=rows.filter(e=>e.rev==="Y").length;
   const locs=rows.filter(e=>e.loc==="Y").length,vids=rows.filter(e=>e.video==="Y").length;
-  const k=[["Entries",rows.length],["Walk-ins",walk],["Quotes",quotes],["Sales",closed],["Sale Value",fmt(saleVal)],["Conversion",conv+"%"],["Reviews",revs],["Locations",locs],["Videos",vids]];
-  document.getElementById("kpis").innerHTML=k.map(x=>`<div class="kpi"><div class="n">${x[1]}</div><div class="l">${x[0]}</div></div>`).join("");
+  const k=[["Entries",rows.length,"all"],["Walk-ins",walk,"walk"],["Quotes",quotes,"quote"],["Sales",closed,"sale"],["Sale Value",fmt(saleVal),"value"],["Conversion",conv+"%",""],["Reviews",revs,"review"],["Locations",locs,"loc"],["Videos",vids,"video"]];
+  document.getElementById("kpis").innerHTML=k.map(x=>`<div class="kpi" ${x[2]?`style="cursor:pointer" onclick="kpiDetail('${x[2]}')"`:""}><div class="n">${x[1]}</div><div class="l">${x[0]}</div></div>`).join("");
   const PR=getProducts();const tot={};PR.forEach(p=>tot[p]=0);rows.forEach(e=>tot[e.prod]=(tot[e.prod]||0)+(+e.sale||0));
   const max=Math.max(1,...Object.values(tot));
   document.getElementById("byprod").innerHTML=PR.map(p=>`<div class="bar-row"><span class="name">${p}</span><span class="bar-track"><span class="bar-fill" style="width:${tot[p]/max*100}%"></span></span><span class="bar-val">${fmt(tot[p])}</span></div>`).join("");
