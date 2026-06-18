@@ -231,6 +231,7 @@
     <div class="small-actions">
       <button class="btn ghost sm" onclick="loadDemo()">↺ Load demo data</button>
       <button class="btn ghost sm" style="color:var(--red)" onclick="clearAll()">🗑 Clear all</button>
+      <button class="btn ghost sm owner-only" style="color:var(--red)" onclick="resetGoLive()">🧹 Reset ALL for go-live</button>
     </div>
     <button class="btn ghost sm owner-only" style="margin-top:8px" onclick="changePin()">🔒 Change owner PIN</button>
     <p class="note" style="margin-top:12px">Data stays private on this phone. Location capture & video need the page served over HTTPS (or installed) — they may be blocked when opening the raw file directly in some browsers. Add to Home Screen for the best experience.</p>
@@ -313,6 +314,10 @@ let pendingGeo=null;     // {lat,lng,maps}
 // ---- storage ----
 function load(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
 function save(a){localStorage.setItem(KEY,JSON.stringify(a))}
+function timeOf(e){return (e&&(e.created||e.ts))||parseInt(String((e&&e.id)||"").replace(/[^0-9]/g,""))||0;}
+function resetEpoch(){return +localStorage.getItem("ccs_reset")||0;}
+function applyReset(){var T=resetEpoch();if(!T)return;["ccs_entries_v2","ccs_quotes","ccs_att","ccs_leads"].forEach(function(k){var arr;try{arr=JSON.parse(localStorage.getItem(k)||"[]");}catch(e){return;}if(!Array.isArray(arr))return;var keep=arr.filter(function(x){return timeOf(x)>=T;});if(keep.length!==arr.length){localStorage.setItem(k,JSON.stringify(keep));}});}
+function resetGoLive(){if(role!=="Owner")return toast("Owner only","err");if(!confirm("RESET all punches, quotes, attendance & leads to ZERO for go-live?\n\nYour scheme, staff & settings are KEPT. This applies to ALL devices."))return;if(!confirm("Are you sure? This cannot be undone."))return;localStorage.setItem("ccs_reset",String(Date.now()));applyReset();toast("All transaction data reset to zero","ok");try{renderRecent();renderDash();renderQuoteRecent();}catch(e){}}
 function getScheme(){try{return Object.assign({},DEFAULT_SCHEME,JSON.parse(localStorage.getItem(SKEY)))||DEFAULT_SCHEME}catch(e){return DEFAULT_SCHEME}}
 function getProducts(){const sc=getScheme();return (sc.products&&sc.products.length)?sc.products:PRODUCTS;}
 function getSettings(){const dr={phone:true,item:true,qty:true,quote:true,loc:true,reviewClose:true,videoClose:true};const d={shop:{name:"Chandra Color Shoppee",address:"",phone:"",gst:"",review:"",lat:"27.202222",lng:"77.942500"},staff:STAFF,req:dr};try{const s=JSON.parse(localStorage.getItem("ccs_settings"));if(!s)return d;return {shop:Object.assign({},d.shop,s.shop||{}),staff:(s.staff&&s.staff.length)?s.staff:STAFF,req:Object.assign({},dr,s.req||{})};}catch(e){return d;}}
@@ -320,14 +325,14 @@ function reqs(){return getSettings().req||{};}
 function getStaff(){const s=getSettings();return (s.staff&&s.staff.length)?s.staff:STAFF;}
 /* ===== Firebase cloud sync ===== */
 let fbDb=null,fbReady=false;const _set=localStorage.setItem.bind(localStorage);
-const SYNC_KEYS=[KEY,SKEY,"ccs_quotes","ccs_settings","ccs_pin","ccs_att"];
+const SYNC_KEYS=[KEY,SKEY,"ccs_quotes","ccs_settings","ccs_pin","ccs_att","ccs_reset"];
 const DEFAULT_FB={apiKey:"AIzaSyALFLZCib9GzISV25bHxa3mvHL8mwFwtyQ",authDomain:"ccs-incentive-scheme.firebaseapp.com",projectId:"ccs-incentive-scheme",storageBucket:"ccs-incentive-scheme.firebasestorage.app",messagingSenderId:"377632444189",appId:"1:377632444189:web:c6fa400770568064281bf4"};
 const DEFAULT_SHOP="ccs1";
 function fbCfg(){try{const s=localStorage.getItem("ccs_fb");return s?JSON.parse(s):DEFAULT_FB;}catch(e){return DEFAULT_FB;}}
 function fbShop(){return (localStorage.getItem("ccs_shop")||DEFAULT_SHOP).toLowerCase();}
 function cloudStatus(msg,ok){const el=document.getElementById("fbStatus");if(el){el.textContent=msg;el.style.color=ok?"#166534":"#c0392b";}}
-function refreshAll(){try{fillStaffSelects();}catch(e){}try{renderRecent();}catch(e){}try{renderAttToday();}catch(e){}const vis=id=>{const el=document.getElementById(id);return el&&!el.classList.contains("hide");};try{if(vis("view-dash"))renderDash();if(vis("view-team"))renderTeam();if(vis("view-targets"))renderTargets();if(vis("view-quote"))renderQuoteRecent();if(vis("view-settings"))renderSettings();}catch(e){}}
-function mergeById(a,b){try{const A=JSON.parse(a||"[]"),B=JSON.parse(b||"[]");if(!Array.isArray(A)||!Array.isArray(B))return b;const m={};A.concat(B).forEach(x=>{if(!x||x.id==null)return;const ex=m[x.id];if(!ex){m[x.id]=x;}else if(x.deleted||ex.deleted){m[x.id]=(x.deleted?x:ex);m[x.id].deleted=true;}else{m[x.id]=((x.created||0)>=(ex.created||0))?x:ex;}});const out=Object.keys(m).map(k=>m[k]);out.sort((x,y)=>(x.created||0)-(y.created||0));return JSON.stringify(out);}catch(e){return b||a;}}
+function refreshAll(){try{applyReset();}catch(e){}try{fillStaffSelects();}catch(e){}try{renderRecent();}catch(e){}try{renderAttToday();}catch(e){}const vis=id=>{const el=document.getElementById(id);return el&&!el.classList.contains("hide");};try{if(vis("view-dash"))renderDash();if(vis("view-team"))renderTeam();if(vis("view-targets"))renderTargets();if(vis("view-quote"))renderQuoteRecent();if(vis("view-settings"))renderSettings();}catch(e){}}
+function mergeById(a,b){try{const A=JSON.parse(a||"[]"),B=JSON.parse(b||"[]");if(!Array.isArray(A)||!Array.isArray(B))return b;const m={};A.concat(B).forEach(x=>{if(!x||x.id==null)return;const ex=m[x.id];if(!ex){m[x.id]=x;}else if(x.deleted||ex.deleted){m[x.id]=(x.deleted?x:ex);m[x.id].deleted=true;}else{m[x.id]=((x.created||0)>=(ex.created||0))?x:ex;}});let out=Object.keys(m).map(k=>m[k]);var T=resetEpoch();if(T)out=out.filter(function(x){return timeOf(x)>=T;});out.sort((x,y)=>(x.created||0)-(y.created||0));return JSON.stringify(out);}catch(e){return b||a;}}
 function pushDoc(k,v){if(!fbDb)return;fbDb.collection("ccs_"+fbShop()).doc(encodeURIComponent(k)).set({v:v,u:Date.now()}).catch(()=>{});}
 function cloudInit(){
   const cfg=fbCfg();if(!cfg)return;
@@ -754,7 +759,7 @@ function saveQuotePunch(){
   const no=document.getElementById("q_no").value,phone=document.getElementById("q_phone").value.trim(),addr=document.getElementById("q_addr").value.trim(),staff=document.getElementById("q_staff").value;
   const _cs=(window._pendingPunch&&window._pendingPunch.staff)||staff;if(!getAtt().some(x=>x.date===todayStr()&&x.staff===_cs&&x.type==="in"))return toast(_cs+" must Check in (Attendance) before quoting.","err");
   const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]");
-  Q.push({id:"q"+Date.now(),no,date:todayStr(),cust,phone,addr,staff,lines:qlines.slice(),total:Math.round(t.grand),status:"Pending",freshId:(window._leadFresh||"")});
+  Q.push({id:"q"+Date.now(),no,date:todayStr(),cust,phone,addr,staff,lines:qlines.slice(),total:Math.round(t.grand),status:"Pending",freshId:(window._leadFresh||""),created:Date.now()});
   localStorage.setItem("ccs_quotes",JSON.stringify(Q));
   const a=load();const firstProd=(qlines[0]||{}).prod||getProducts()[0];const pp=window._pendingPunch||{};
   a.push({id:"e"+Date.now(),date:(pp.date||todayStr()),staff:(pp.staff||staff),act:"Quotation Given",src:(pp.src||"Walk-in"),by:(pp.by||"Staff"),cust,phone,prod:firstProd,item:qlines.map(l=>l.prod+(l.desc?(" "+l.desc):"")).join("; ").slice(0,90),qty:qlines.reduce((s,l)=>s+(+l.qty||0),0),unit:(qlines[0]||{}).unit||"Sqft",quote:Math.round(t.grand),sale:0,rev:"N",loc:"N",lat:"",lng:"",maps:"",video:"N",videoName:"",followups:[{date:new Date(Date.now()+86400000*2).toISOString().slice(0,10),note:"Follow up on quotation "+no,done:false}],status:"Open",rem:"Auto-created from quotation "+no,created:Date.now()});
