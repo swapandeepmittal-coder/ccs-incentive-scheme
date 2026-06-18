@@ -320,7 +320,7 @@ const DEFAULT_SCHEME={
   targets:{"Wallpaper":150000,"Italian Texture":120000,"Advanced Range":200000,"BHPS Service":300000,"Waterproofing":100000},
   rate:{"Wallpaper":1.5,"Italian Texture":1.5,"Advanced Range":1.0,"BHPS Service":2.0,"Waterproofing":1.5},
   convM:{"Wallpaper":{"Cold call":250,"Walk-in":100,"Social media":150,"Owner reference":120,"Old lead":80,"Other":100},"Italian Texture":{"Cold call":200,"Walk-in":90,"Social media":120,"Owner reference":100,"Old lead":70,"Other":90},"Advanced Range":{"Cold call":120,"Walk-in":60,"Social media":80,"Owner reference":70,"Old lead":50,"Other":60},"BHPS Service":{"Cold call":300,"Walk-in":150,"Social media":200,"Owner reference":180,"Old lead":120,"Other":150},"Waterproofing":{"Cold call":150,"Walk-in":70,"Social media":100,"Owner reference":90,"Old lead":60,"Other":80}},
-  actpoints:{sale:0,greview:5,video:5,location:1,followup:1},
+  actpoints:{sale:0,greview:5,video:5,location:1,followup:1,walkin:2},
   convFlat:250,
   pointValue:1.20,
   rewardGoal:5000,
@@ -675,7 +675,7 @@ function renderTeam(){
     getProducts().forEach(p=>{const val=r.filter(e=>e.prod===p).reduce((a,e)=>a+(+e.sale||0),0);saleVal+=val;catCash+=val*((sc.rate[p]||0)/100);});
     const rp=r.filter(e=>e.status!=="Lost"&&e.status!=="Rejected");
     const fudone=rp.reduce((a,e)=>a+((e.followups||[]).filter(f=>f.done).length),0);
-    pts+=rp.filter(e=>e.act==="Sale Closed").length*(ap.sale||0)+rp.filter(e=>e.rev==="Y").length*(ap.greview!=null?ap.greview:(ap.review||0))+rp.filter(e=>e.video==="Y").length*(ap.video||0)+rp.filter(e=>e.loc==="Y").length*(ap.location||0)+fudone*(ap.followup||0);
+    pts+=rp.filter(e=>e.act==="Sale Closed").length*(ap.sale||0)+rp.filter(e=>e.rev==="Y").length*(ap.greview!=null?ap.greview:(ap.review||0))+rp.filter(e=>e.video==="Y").length*(ap.video||0)+rp.filter(e=>e.loc==="Y").length*(ap.location||0)+fudone*(ap.followup||0)+rp.filter(e=>e.act==="Walk-in").length*(ap.walkin||0);
     rp.filter(e=>e.act==="Sale Closed"&&(e.by||"Staff")!=="Owner").forEach(e=>{const m=cm[e.prod]||{};pts+=(m[e.src||"Other"]||0)+flat;});
     const unlocked=(gatePct<=0)||(saleVal>=threshold);
     const giftCash=unlocked?Math.round(pts*pv):0;const total=catCash+giftCash;
@@ -708,7 +708,7 @@ function renderSchemeEditor(){
   editorProducts.forEach((p,i)=>{const m=cm[p]||{};h+=`<tr><td class="l">${p}</td>`+SOURCES.map((s,si)=>`<td><input type="number" id="cm_${i}_${si}" value="${m[s]||0}" style="padding:6px;width:58px"></td>`).join("")+`</tr>`;});
   h+=`</table></div>`;
   const ap=sc.actpoints||{sale:0,review:0,location:0,followup:0};
-  h+=`<h3 style="margin-top:14px">Activity points (added for everyone)</h3><div class="row"><div><label>Sale</label><input type="number" id="ap_sale" value="${ap.sale||0}"></div><div><label>Google review</label><input type="number" id="ap_greview" value="${ap.greview!=null?ap.greview:(ap.review||0)}"></div></div><div class="row"><div><label>Video review</label><input type="number" id="ap_video" value="${ap.video||0}"></div><div><label>Location</label><input type="number" id="ap_location" value="${ap.location||0}"></div></div><div class="row"><div><label>Follow-up</label><input type="number" id="ap_followup" value="${ap.followup||0}"></div><div></div></div>`;
+  h+=`<h3 style="margin-top:14px">Activity points (added for everyone)</h3><div class="row"><div><label>Sale</label><input type="number" id="ap_sale" value="${ap.sale||0}"></div><div><label>Google review</label><input type="number" id="ap_greview" value="${ap.greview!=null?ap.greview:(ap.review||0)}"></div></div><div class="row"><div><label>Video review</label><input type="number" id="ap_video" value="${ap.video||0}"></div><div><label>Location</label><input type="number" id="ap_location" value="${ap.location||0}"></div></div><div class="row"><div><label>Follow-up</label><input type="number" id="ap_followup" value="${ap.followup||0}"></div><div><label>Walk-in / Counter</label><input type="number" id="ap_walkin" value="${ap.walkin||0}"></div></div>`;
   h+=`<div class="row" style="margin-top:10px"><div><label>Flat staff-conversion points</label><input type="number" id="s_flat" value="${sc.convFlat!=null?sc.convFlat:250}"></div><div><label>Point value (₹ per point)</label><input type="number" step="0.01" id="s_pv" value="${sc.pointValue!=null?sc.pointValue:0.10}"></div></div>`;
   h+=`<div class="row" style="margin-top:6px"><div><label>Gift unlocks at — % of staff target share (0 = always pay)</label><input type="number" id="s_gate" value="${sc.giftGatePct!=null?sc.giftGatePct:0}"></div><div></div></div>`;
   h+=`<p class="note">Points convert to a <b>gift</b> at the point value (₹ per point) — use it to plan staff rewards. The <b>Rate %</b> on the sale amount is the separate cash incentive. Owner-converted leads earn the staff 0 conversion points.</p>`;
@@ -720,7 +720,7 @@ function saveScheme(silent){
   const ep=readEditorProducts();
   const sc={products:ep.prods,targets:ep.tg,rate:ep.rt};
   sc.convM={};editorProducts.forEach((p,i)=>{const nm=((document.getElementById("n_"+i)||{}).value||"").trim();if(!nm)return;const o={};SOURCES.forEach((s,si)=>{o[s]=v("cm_"+i+"_"+si);});sc.convM[nm]=o;});
-  sc.actpoints={sale:v("ap_sale"),greview:v("ap_greview"),video:v("ap_video"),location:v("ap_location"),followup:v("ap_followup")};
+  sc.actpoints={sale:v("ap_sale"),greview:v("ap_greview"),video:v("ap_video"),location:v("ap_location"),followup:v("ap_followup"),walkin:v("ap_walkin")};
   sc.convFlat=v("s_flat");sc.pointValue=+((document.getElementById("s_pv")||{}).value)||0.10;sc.giftGatePct=v("s_gate");
   sc.period=document.getElementById("s_period").value;sc.reward=document.getElementById("s_reward").value;sc.rewardGoal=v("s_goal");
   localStorage.setItem(SKEY,JSON.stringify(sc));if(!silent)toast("Scheme saved","ok");renderTargets();
