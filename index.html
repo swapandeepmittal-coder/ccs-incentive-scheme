@@ -192,7 +192,8 @@
   <div class="card"><h2>🎨 Sale value by product</h2><div id="byprod"></div></div>
   <div class="card"><h2>⏰ Follow-ups due</h2><div id="fudue"></div></div>
   <div class="card owner-only"><h2>🕒 Attendance today (Owner)</h2><div id="attDash"></div></div>
-  <div class="card owner-only" id="pnlCard"><h2>💵 Site collections &amp; labour (Owner)</h2><div id="pnl"></div></div>
+  <div class="card owner-only" id="payApprCard"><h2>💳 Payments awaiting approval (Owner)</h2><div id="payAppr"></div></div>
+  <div class="card owner-only" id="pnlCard"><h2>💵 Site collections &amp; labour — approved (Owner)</h2><div id="pnl"></div></div>
 </section>
 
 <!-- TEAM -->
@@ -223,7 +224,7 @@
 
   <div class="card"><h2>⚙️ Manage</h2>
     <div class="small-actions">
-      <button class="btn ghost sm" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn ghost sm" onclick="exportCSV()">⬇ Customer master (Excel/CSV)</button>
       <button class="btn ghost sm" onclick="document.getElementById('imp').click()">⬆ Import CSV</button>
     </div>
     <input type="file" id="imp" accept=".csv" class="hide" onchange="importCSV(event)">
@@ -436,7 +437,7 @@ function savePunch(){
     prod:document.getElementById("f_prod").value,item:document.getElementById("f_item").value.trim(),
     qty:+document.getElementById("f_qty").value||0,unit:document.getElementById("f_unit").value,
     quote:+document.getElementById("f_quote").value||0,
-    sale:+document.getElementById("f_sale").value||0,collected:+document.getElementById("f_collected").value||0,labor:+document.getElementById("f_labor").value||0,rev:document.getElementById("f_rev").value,
+    sale:+document.getElementById("f_sale").value||0,collected:+document.getElementById("f_collected").value||0,labor:+document.getElementById("f_labor").value||0,payStatus:((+document.getElementById("f_collected").value||0)||(+document.getElementById("f_labor").value||0))?"Pending":"",rev:document.getElementById("f_rev").value,
     loc:pendingGeo?"Y":"N",lat:pendingGeo?pendingGeo.lat:"",lng:pendingGeo?pendingGeo.lng:"",maps:pendingGeo?pendingGeo.maps:"",addr:pendingGeo?(pendingGeo.addr||""):"",
     video:pendingVideo?"Y":"N",videoName:pendingVideo?pendingVideo.name:"",
     followups:pendingFu.slice(),status:status,rem:document.getElementById("f_rem").value.trim(),created:Date.now()};
@@ -546,12 +547,13 @@ function renderDash(){
   load().forEach(e=>{(e.followups||[]).forEach(f=>{if(!f.done && f.date<=d && !["Closed","Lost"].includes(e.status))due.push({e,f})})});
   due.sort((a,b)=>a.f.date.localeCompare(b.f.date));
   document.getElementById("fudue").innerHTML=due.length?due.slice(0,20).map(({e,f})=>`<div class="entry" onclick="openDetail('${e.id}')"><div class="top"><span>${e.cust} · ${e.prod}</span><span class="note">${f.date}</span></div><div class="meta">${e.staff} · ${e.phone||"no phone"} · ${f.note||""} · ${statusPill(e.status)}</div></div>`).join(""):'<p class="note">No pending follow-ups. 🎉</p>';
-  const all=load();const col=all.reduce((a,e)=>a+(+e.collected||0),0),lab=all.reduce((a,e)=>a+(+e.labor||0),0);
-  const dayCol=rows.reduce((a,e)=>a+(+e.collected||0),0),dayLab=rows.reduce((a,e)=>a+(+e.labor||0),0);
-  const byc={};all.forEach(e=>{if((+e.collected||0)||(+e.labor||0)){const kk=e.cust||"—";byc[kk]=byc[kk]||{c:0,l:0};byc[kk].c+=(+e.collected||0);byc[kk].l+=(+e.labor||0);}});
-  renderAttDash();
+  const all=load();const okPay=e=>e.payStatus==="Approved";
+  const col=all.filter(okPay).reduce((a,e)=>a+(+e.collected||0),0),lab=all.filter(okPay).reduce((a,e)=>a+(+e.labor||0),0);
+  const dayCol=rows.filter(okPay).reduce((a,e)=>a+(+e.collected||0),0),dayLab=rows.filter(okPay).reduce((a,e)=>a+(+e.labor||0),0);
+  const byc={};all.filter(okPay).forEach(e=>{if((+e.collected||0)||(+e.labor||0)){const kk=e.cust||"—";byc[kk]=byc[kk]||{c:0,l:0};byc[kk].c+=(+e.collected||0);byc[kk].l+=(+e.labor||0);}});
+  renderAttDash();renderPayAppr();
   const pe=document.getElementById("pnl");
-  if(pe)pe.innerHTML=`<div class="kpis"><div class="kpi"><div class="n">${fmt(dayCol)}</div><div class="l">Collected (day)</div></div><div class="kpi"><div class="n">${fmt(dayLab)}</div><div class="l">Labour (day)</div></div><div class="kpi"><div class="n">${fmt(dayCol-dayLab)}</div><div class="l">Net (day)</div></div></div><div style="overflow-x:auto"><table style="margin-top:10px"><tr><th class="l">Customer / site</th><th>Collected</th><th>Labour</th><th>Net</th></tr>${Object.keys(byc).map(kk=>`<tr><td class="l">${kk}</td><td>${fmt(byc[kk].c)}</td><td>${fmt(byc[kk].l)}</td><td><b>${fmt(byc[kk].c-byc[kk].l)}</b></td></tr>`).join("")||'<tr><td class="l" colspan="4">No collections logged yet.</td></tr>'}<tr><td class="l"><b>TOTAL (all-time)</b></td><td><b>${fmt(col)}</b></td><td><b>${fmt(lab)}</b></td><td><b>${fmt(col-lab)}</b></td></tr></table></div>`;
+  if(pe)pe.innerHTML=`<div class="kpis"><div class="kpi"><div class="n">${fmt(dayCol)}</div><div class="l">Collected appr (day)</div></div><div class="kpi"><div class="n">${fmt(dayLab)}</div><div class="l">Labour appr (day)</div></div><div class="kpi"><div class="n">${fmt(dayCol-dayLab)}</div><div class="l">Net (day)</div></div></div><div style="overflow-x:auto"><table style="margin-top:10px"><tr><th class="l">Customer / site (approved)</th><th>Collected</th><th>Labour</th><th>Net</th></tr>${Object.keys(byc).map(kk=>`<tr><td class="l">${kk}</td><td>${fmt(byc[kk].c)}</td><td>${fmt(byc[kk].l)}</td><td><b>${fmt(byc[kk].c-byc[kk].l)}</b></td></tr>`).join("")||'<tr><td class="l" colspan="4">No collections logged yet.</td></tr>'}<tr><td class="l"><b>TOTAL (all-time)</b></td><td><b>${fmt(col)}</b></td><td><b>${fmt(lab)}</b></td><td><b>${fmt(col-lab)}</b></td></tr></table></div>`;
 }
 
 function scope(){return range==="mtd"?monthData():load()}
@@ -626,11 +628,11 @@ function resetScheme(){localStorage.removeItem(SKEY);toast("Reset to defaults","
 
 function exportCSV(){
   const a=load();if(!a.length)return toast("No data to export","err");
-  const cols=["date","staff","act","src","by","cust","phone","prod","item","qty","unit","quote","sale","rev","loc","lat","lng","maps","video","videoName","status","rem","collected","labor"];
-  const head=["Date","Staff","Activity","Source","ConvBy","Customer","Contact","Product","ProductUsed","Qty","Unit","Quote","Sale","Review","Location","Lat","Lng","MapsLink","Video","VideoName","Status","Remarks","Collected","LaborPaid","FollowUps"];
   const esc=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
-  const csv=[head.join(",")].concat(a.map(e=>cols.map(c=>esc(e[c])).concat(esc((e.followups||[]).map(f=>f.date+(f.done?"(done)":"")+(f.note?":"+f.note:"")).join(" | "))).join(","))).join("\n");
-  const url=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));const l=document.createElement("a");l.href=url;l.download="CCS_punches_"+todayStr()+".csv";l.click();toast("Exported CSV","ok");
+  const head=["Date","Staff","Activity","Source","ConvertedBy","Customer","Contact","Product","ProductUsed","Qty","Unit","Quote","Sale","Collected","LabourPaid","Net","PaymentStatus","GoogleReview","Video","LocationTagged","SiteAddress","MapLink","Status","Remarks","FollowUps"];
+  const out=a.map(e=>[e.date,e.staff,e.act,e.src,e.by,e.cust,e.phone,e.prod,e.item,e.qty,e.unit,e.quote,e.sale,e.collected,e.labor,((+e.collected||0)-(+e.labor||0)),e.payStatus,e.rev,e.video,e.loc,e.addr,e.maps,e.status,e.rem,(e.followups||[]).map(f=>f.date+(f.done?"(done)":"")+(f.note?":"+f.note:"")).join(" | ")].map(esc).join(","));
+  const csv=[head.join(",")].concat(out).join("\n");
+  const url=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));const l=document.createElement("a");l.href=url;l.download="CCS_customer_master_"+todayStr()+".csv";l.click();toast("Customer master exported","ok");
 }
 function importCSV(ev){const f=ev.target.files[0];if(!f)return;const rd=new FileReader();
   rd.onload=()=>{const lines=rd.result.split(/\r?\n/).filter(x=>x.trim());lines.shift();const a=load();let n=0;
@@ -802,6 +804,12 @@ function renderLeads(){
   box.innerHTML=L.length?L.map(l=>`<div class="entry"><div class="top"><span>${l.cust||"Lead"}</span><span class="note">${l.src||"Freshsales"}</span></div><div class="meta">${l.phone||"no phone"}${l.note?(" · "+l.note):""}</div><div class="small-actions"><button class="btn green sm" onclick="makeQuoteFromLead('${l.freshId||""}')">\U0001f9fe Make quote</button></div></div>`).join(""):'<p class="note">No leads yet. New Freshsales leads appear here automatically once the bridge is deployed.</p>';
 }
 function makeQuoteFromLead(freshId){const l=getLeads().find(x=>String(x.freshId)===String(freshId))||{};window._leadFresh=freshId||"";show("quote");setTimeout(function(){const c=document.getElementById("q_cust");if(c)c.value=l.cust||"";const p=document.getElementById("q_phone");if(p)p.value=l.phone||"";},60);toast("Lead loaded into quote","ok");}
+function renderPayAppr(){const box=document.getElementById("payAppr");if(!box)return;
+  const pend=load().filter(e=>((+e.collected||0)||(+e.labor||0))&&e.payStatus!=="Approved"&&e.payStatus!=="Rejected");
+  if(!pend.length){box.innerHTML='<p class="note">No payments awaiting approval.</p>';return;}
+  box.innerHTML=pend.slice().reverse().map(e=>`<div class="entry"><div class="top"><span>${e.cust||"—"} · ${e.prod||""}</span><span class="note">${e.date}</span></div><div class="meta">${e.staff}${(+e.collected)?(" · Collected "+fmt(e.collected)):""}${(+e.labor)?(" · Labour "+fmt(e.labor)):""}</div><div class="small-actions"><button class="btn green sm" onclick="approvePay('${e.id}')">✓ Approve</button><button class="btn ghost sm" style="color:var(--red)" onclick="rejectPay('${e.id}')">✕ Reject</button></div></div>`).join("");}
+function approvePay(id){if(role!=="Owner")return toast("Owner only","err");const a=load(),e=a.find(x=>x.id===id);if(e)e.payStatus="Approved";save(a);toast("Payment approved","ok");renderDash();}
+function rejectPay(id){if(role!=="Owner")return toast("Owner only","err");const a=load(),e=a.find(x=>x.id===id);if(e)e.payStatus="Rejected";save(a);toast("Payment rejected","ok");renderDash();}
 function getAtt(){try{return JSON.parse(localStorage.getItem("ccs_att")||"[]");}catch(e){return[];}}
 function nearestCustomer(lat,lng){let best=null;load().forEach(e=>{if(e.lat&&e.lng){const d=distM(+e.lat,+e.lng,+lat,+lng);if(d<=250&&(!best||d<best.dist))best={name:e.cust||"site",dist:d};}});return best;}
 function markAtt(type){const sel=document.getElementById("att_staff");const staff=sel?sel.value:getStaff()[0];
