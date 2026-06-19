@@ -996,7 +996,7 @@ function sendOtp(phone,otp){var c=smsCfg();
   if(c.key&&phone){var url=(c.url||"https://control.msg91.com/api/v5/otp")+"?authkey="+encodeURIComponent(c.key)+"&template_id="+encodeURIComponent(c.tpl||"")+"&mobile=91"+encodeURIComponent(phone)+"&otp="+otp+(c.sender?("&sender="+encodeURIComponent(c.sender)):"");return fetch(url,{method:"GET"}).then(function(){return true;}).catch(function(){alert("Could not reach the SMS gateway from the browser. OTP for manual entry: "+otp);return true;});}
   alert("OTP (test mode — no WhatsApp relay / SMS gateway set in Setup):  "+otp+"\n\nOwner: add your WhatsApp relay URL under Setup → WhatsApp / SMS OTP to send real codes.");return Promise.resolve(true);}
 let pendingOtp=null;
-function markAtt(type){var sel=document.getElementById("att_staff");var staff=sel?sel.value:getStaff()[0];var c=smsCfg();var ph=(c.phones&&c.phones[staff])||"";var otp=(""+Math.floor(100000+Math.random()*900000));toast("Sending OTP"+(ph?(" to "+ph):"")+"…","ok");sendOtp(ph,otp).then(function(){var ent=prompt("Enter the 6-digit OTP"+(ph?(" sent to "+ph):"")+" to check "+(type==="in"?"IN":"OUT")+":");if(ent==null)return;if((ent||"").trim()!==otp)return toast("Wrong OTP — attendance not marked","err");doMarkAtt(type,staff);});}
+function markAtt(type){var sel=document.getElementById("att_staff");var staff=sel?sel.value:getStaff()[0];doMarkAtt(type,staff);}
 function doMarkAtt(type,staff){
   if(!navigator.geolocation)return toast("Location is mandatory for attendance — enable GPS/location.","err");
   const sh=getSettings().shop||{};const radius=+(sh.attRadius)||200;
