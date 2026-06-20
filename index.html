@@ -226,6 +226,7 @@
   <div class="card"><h2>🎨 Sale value by product</h2><div id="byprod"></div></div>
   <div class="card"><h2>⏰ Follow-ups due</h2><div id="fudue"></div></div>
   <div class="card owner-only"><h2>🕒 Attendance today (Owner)</h2><div id="attDash"></div></div>
+  <div class="card owner-only"><h2>📍 Site visits — check-in / check-out (Owner)</h2><div id="siteDash"></div></div>
   <div class="card owner-only" id="payApprCard"><h2>💳 Payments awaiting approval (Owner)</h2><div id="payAppr"></div></div>
   <div class="card owner-only" id="pnlCard"><h2>💵 Site collections &amp; labour — approved (Owner)</h2><div id="pnl"></div></div>
 </section>
@@ -703,6 +704,15 @@ function kpiDetail(type){
   var html=list.length?list.map(function(e){return `<div class="entry" onclick="openDetail('${e.id}')"><div class="top"><span>${e.cust||"—"} · ${e.prod||""}</span><span class="note">${e.staff||""}</span></div><div class="meta">${e.act}${e.sale?(" · Sale "+fmt(e.sale)):(e.quote?(" · Quote "+fmt(e.quote)):"")}${e.src?(" · "+e.src):""}${e.by?(" · by "+e.by):""} · ${statusPill(e.status)}</div></div>`;}).join(""):'<p class="note">Nothing for this day.</p>';
   document.getElementById("modalHost").innerHTML=`<div class="modal" onclick="if(event.target===this)closeModal()"><div class="sheet"><h2>${title} · ${d}</h2>${html}<button class="btn ghost" onclick="closeModal()">Close</button></div></div>`;
 }
+function renderSiteDash(){
+  var box=document.getElementById("siteDash");if(!box)return;
+  var d=(document.getElementById("d_date")||{}).value||todayStr();
+  var V=getSiteVisits().filter(function(x){return x.date===d;});
+  if(!V.length){box.innerHTML='<p class="note">No site visits on this date.</p>';return;}
+  var g={};V.forEach(function(x){var k=(x.cust||"")+"|"+(x.staff||"")+"|"+(x.phone||"");g[k]=g[k]||{cust:x.cust,staff:x.staff,phone:x.phone};if(x.type==="in"&&!g[k].in)g[k].in=x;if(x.type==="out")g[k].out=x;});
+  var rowsH=Object.keys(g).map(function(k){var r=g[k];var inT=r.in?r.in.time:"\u2014";var outT=r.out?r.out.time:"\u26a0 no out";var hrs=(r.in&&r.out)?(((r.out.ts-r.in.ts)/3600000).toFixed(1)):"\u2014";var loc=(r.in&&r.in.lat)?("📍"+r.in.lat+","+r.in.lng):"";return '<tr><td class="l">'+(r.cust||"\u2014")+'<br><span class="note">'+(r.phone||"")+'</span></td><td class="l">'+(r.staff||"")+'</td><td>'+inT+'</td><td style="'+((r.in&&!r.out)?"color:var(--red);font-weight:700":"")+'">'+outT+'</td><td>'+hrs+'</td><td class="l">'+loc+'</td></tr>';}).join("");
+  box.innerHTML='<div style="overflow-x:auto"><table><tr><th class="l">Customer</th><th class="l">Staff</th><th>In</th><th>Out</th><th>Hrs</th><th class="l">Location</th></tr>'+rowsH+'</table></div>';
+}
 function renderDash(){
   const d=document.getElementById("d_date").value||todayStr(),rows=dayData(d);
   const walk=rows.filter(e=>e.act==="Walk-in").length,quotes=rows.filter(e=>e.act==="Quotation Given").length;
@@ -722,7 +732,7 @@ function renderDash(){
   const col=all.filter(okPay).reduce((a,e)=>a+(+e.collected||0),0),lab=all.filter(okPay).reduce((a,e)=>a+(+e.labor||0),0);
   const dayCol=rows.filter(okPay).reduce((a,e)=>a+(+e.collected||0),0),dayLab=rows.filter(okPay).reduce((a,e)=>a+(+e.labor||0),0);
   const byc={};all.filter(okPay).forEach(e=>{if((+e.collected||0)||(+e.labor||0)){const kk=e.cust||"—";byc[kk]=byc[kk]||{c:0,l:0};byc[kk].c+=(+e.collected||0);byc[kk].l+=(+e.labor||0);}});
-  renderAttDash();renderPayAppr();
+  renderAttDash();renderPayAppr();try{renderSiteDash();}catch(e){}
   const pe=document.getElementById("pnl");
   if(pe)pe.innerHTML=`<div class="kpis"><div class="kpi"><div class="n">${fmt(dayCol)}</div><div class="l">Collected appr (day)</div></div><div class="kpi"><div class="n">${fmt(dayLab)}</div><div class="l">Labour appr (day)</div></div><div class="kpi"><div class="n">${fmt(dayCol-dayLab)}</div><div class="l">Net (day)</div></div></div><div style="overflow-x:auto"><table style="margin-top:10px"><tr><th class="l">Customer / site (approved)</th><th>Collected</th><th>Labour</th><th>Net</th></tr>${Object.keys(byc).map(kk=>`<tr><td class="l">${kk}</td><td>${fmt(byc[kk].c)}</td><td>${fmt(byc[kk].l)}</td><td><b>${fmt(byc[kk].c-byc[kk].l)}</b></td></tr>`).join("")||'<tr><td class="l" colspan="4">No collections logged yet.</td></tr>'}<tr><td class="l"><b>TOTAL (all-time)</b></td><td><b>${fmt(col)}</b></td><td><b>${fmt(lab)}</b></td><td><b>${fmt(col-lab)}</b></td></tr></table></div>`;
 }
