@@ -488,6 +488,7 @@ function siteVisit(type){
   var staff=(document.getElementById("sv_staff")||{}).value||getStaff()[0];
   if(!cust)return toast("Enter customer name","err");
   if(!phone)return toast("Customer contact is required to send the OTP","err");
+  if(isStaffNumber(phone))return toast("That is a staff number - enter the CUSTOMER mobile","err");
   var otp=(""+Math.floor(100000+Math.random()*900000));
   toast("Sending OTP to the customer.","ok");
   sendOtp(phone,otp,staff).then(function(){
@@ -515,7 +516,7 @@ function initShades(){var box=document.getElementById("w_shades");if(box){box.in
 function readShades(){var box=document.getElementById("w_shades");if(!box)return[];var rows=box.querySelectorAll("[id^=ws_]");var out=[];rows.forEach(function(r){var i=r.id.split("_")[1];var a=((document.getElementById("wsa_"+i)||{}).value||"").trim();var p=((document.getElementById("wsp_"+i)||{}).value||"").trim();var s=((document.getElementById("wss_"+i)||{}).value||"").trim();if(a||p||s)out.push({area:a,product:p,shade:s});});return out;}
 function saveWalkin(){
   var cust=(document.getElementById("w_cust").value||"").trim();if(!cust)return toast("Enter customer name","err");
-  var phone=(document.getElementById("w_phone").value||"").trim();if(!phone)return toast("Contact no. is required","err");
+  var phone=(document.getElementById("w_phone").value||"").trim();if(!phone)return toast("Contact no. is required","err");if(isStaffNumber(phone))return toast("That is a staff number - enter the customer contact","err");
   var _sh=readShades();if(!_sh.length)return toast("At least one shade / colour code is required","err");
   if(!pendingWInvoice)return toast("Invoice photo is required","err");
   var rev=document.getElementById("w_rev").value;if(rev!=="Y"&&!pendingWVideo)return toast("A Google review or a video feedback is required","err");
@@ -558,6 +559,7 @@ function savePunch(){
   // mandatory rules
   if(!e.cust){return toast("Customer name is required","err")}
   if(!e.phone){return toast("Contact no. is required","err")}
+  if(isStaffNumber(e.phone))return toast("That is a staff number - enter the customer contact","err");
   if(!getAtt().some(x=>x.date===todayStr()&&x.staff===e.staff&&x.type==="in"))return toast(e.staff+" must Check in (Attendance) before punching.","err");
   const R=reqs();
   if(active){
@@ -901,7 +903,7 @@ function saveQuotePunch(){
   if(!cust)return toast("Enter customer name","err");
   if(t.grand<=0)return toast("Add at least one line with qty & rate","err");
   const no=document.getElementById("q_no").value,phone=document.getElementById("q_phone").value.trim(),addr=document.getElementById("q_addr").value.trim(),staff=document.getElementById("q_staff").value;
-  if(!phone)return toast("Contact no. is required","err");
+  if(!phone)return toast("Contact no. is required","err");if(isStaffNumber(phone))return toast("That is a staff number - enter the customer contact","err");
   const qd=(document.getElementById("q_date")||{}).value||todayStr();
   const _cs=(window._pendingPunch&&window._pendingPunch.staff)||staff;if(!getAtt().some(x=>x.date===todayStr()&&x.staff===_cs&&x.type==="in"))return toast(_cs+" must Check in (Attendance) before quoting.","err");
   const Q=JSON.parse(localStorage.getItem("ccs_quotes")||"[]");
@@ -1032,6 +1034,7 @@ function rejectPay(id){if(role!=="Owner")return toast("Owner only","err");const 
 function getAtt(){try{return JSON.parse(localStorage.getItem("ccs_att")||"[]");}catch(e){return[];}}
 function nearestCustomer(lat,lng){let best=null;load().forEach(e=>{if(e.lat&&e.lng){const d=distM(+e.lat,+e.lng,+lat,+lng);if(d<=250&&(!best||d<best.dist))best={name:e.cust||"site",dist:d};}});return best;}
 function smsCfg(){return getSettings().sms||{};}
+function isStaffNumber(phone){var n=(""+(phone||"")).replace(/\D/g,"").slice(-10);if(!n)return false;var ph=(getSettings().sms&&getSettings().sms.phones)||{};return Object.keys(ph).some(function(k){return (""+ph[k]).replace(/\D/g,"").slice(-10)===n;});}
 function sendOtp(phone,otp,staff){var c=smsCfg();
   if(c.relay&&phone){return fetch(c.relay,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mobile:(""+phone),otp:otp,staff:(staff||""),secret:c.secret||""})}).then(function(r){if(!r.ok)throw 0;return true;}).catch(function(){alert("Could not reach the WhatsApp relay. OTP for manual entry: "+otp);return true;});}
   if(c.key&&phone){var url=(c.url||"https://control.msg91.com/api/v5/otp")+"?authkey="+encodeURIComponent(c.key)+"&template_id="+encodeURIComponent(c.tpl||"")+"&mobile=91"+encodeURIComponent(phone)+"&otp="+otp+(c.sender?("&sender="+encodeURIComponent(c.sender)):"");return fetch(url,{method:"GET"}).then(function(){return true;}).catch(function(){alert("Could not reach the SMS gateway from the browser. OTP for manual entry: "+otp);return true;});}
