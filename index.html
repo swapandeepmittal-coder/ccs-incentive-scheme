@@ -90,6 +90,13 @@
     <div id="attToday" class="note" style="margin-top:6px"></div>
   </div>
   <div class="card">
+    <h2>📍 Site visit — customer verified</h2>
+    <p class="note">Check in when you reach the customer's site and check out when you leave. Each step sends an OTP to the customer's WhatsApp — ask them for the code to confirm you were there.</p>
+    <div class="row"><div><label>Customer name <span class="req">*</span></label><input id="sv_cust" placeholder="e.g. Mr. Sharma"></div><div><label>Customer contact <span class="req">*</span></label><input id="sv_phone" inputmode="tel" placeholder="98xxxxxxxx"></div></div>
+    <div class="row"><div><label>Staff</label><select id="sv_staff"></select></div><div style="display:flex;gap:8px;align-items:flex-end"><button class="btn green sm" onclick="siteVisit('in')">📍 Site check-in</button><button class="btn ghost sm" onclick="siteVisit('out')">Site check-out</button></div></div>
+    <div id="svToday" class="note" style="margin-top:6px"></div>
+  </div>
+  <div class="card">
     <h2>➕ Punch a customer</h2>
     <p class="note">Mandatory while a lead is <b>Open</b>: phone, product, quote value & location. A site can be marked <b>Closed</b> only after a Google review and a customer video are added.</p>
     <div class="row">
@@ -366,13 +373,13 @@ function reqs(){return getSettings().req||{};}
 function getStaff(){const s=getSettings();return (s.staff&&s.staff.length)?s.staff:STAFF;}
 /* ===== Firebase cloud sync ===== */
 let fbDb=null,fbReady=false;const _set=localStorage.setItem.bind(localStorage);
-const SYNC_KEYS=[KEY,SKEY,"ccs_quotes","ccs_settings","ccs_pin","ccs_att","ccs_reset","ccs_walkins"];
+const SYNC_KEYS=[KEY,SKEY,"ccs_quotes","ccs_settings","ccs_pin","ccs_att","ccs_reset","ccs_walkins","ccs_sitevisits"];
 const DEFAULT_FB={apiKey:"AIzaSyALFLZCib9GzISV25bHxa3mvHL8mwFwtyQ",authDomain:"ccs-incentive-scheme.firebaseapp.com",projectId:"ccs-incentive-scheme",storageBucket:"ccs-incentive-scheme.firebasestorage.app",messagingSenderId:"377632444189",appId:"1:377632444189:web:c6fa400770568064281bf4"};
 const DEFAULT_SHOP="ccs1";
 function fbCfg(){try{const s=localStorage.getItem("ccs_fb");return s?JSON.parse(s):DEFAULT_FB;}catch(e){return DEFAULT_FB;}}
 function fbShop(){return (localStorage.getItem("ccs_shop")||DEFAULT_SHOP).toLowerCase();}
 function cloudStatus(msg,ok){const el=document.getElementById("fbStatus");if(el){el.textContent=msg;el.style.color=ok?"#166534":"#c0392b";}}
-function refreshAll(){try{applyReset();}catch(e){}try{fillStaffSelects();}catch(e){}try{["f_date","w_date","q_date"].forEach(function(id){var el=document.getElementById(id);if(el&&!el.value)el.value=todayStr();});}catch(e){}try{renderRecent();}catch(e){}try{renderAttToday();}catch(e){}const vis=id=>{const el=document.getElementById(id);return el&&!el.classList.contains("hide");};try{if(vis("view-dash"))renderDash();if(vis("view-team"))renderTeam();if(vis("view-targets"))renderTargets();if(vis("view-quote"))renderQuoteRecent();if(vis("view-settings"))renderSettings();}catch(e){}}
+function refreshAll(){try{applyReset();}catch(e){}try{fillStaffSelects();}catch(e){}try{["f_date","w_date","q_date"].forEach(function(id){var el=document.getElementById(id);if(el&&!el.value)el.value=todayStr();});}catch(e){}try{renderRecent();}catch(e){}try{renderAttToday();}catch(e){}try{renderSiteVisits();}catch(e){}const vis=id=>{const el=document.getElementById(id);return el&&!el.classList.contains("hide");};try{if(vis("view-dash"))renderDash();if(vis("view-team"))renderTeam();if(vis("view-targets"))renderTargets();if(vis("view-quote"))renderQuoteRecent();if(vis("view-settings"))renderSettings();}catch(e){}}
 function mergeById(a,b){try{const A=JSON.parse(a||"[]"),B=JSON.parse(b||"[]");if(!Array.isArray(A)||!Array.isArray(B))return b;const m={};A.concat(B).forEach(x=>{if(!x||x.id==null)return;const ex=m[x.id];if(!ex){m[x.id]=x;}else if(x.deleted||ex.deleted){m[x.id]=(x.deleted?x:ex);m[x.id].deleted=true;}else{m[x.id]=((x.created||0)>=(ex.created||0))?x:ex;}});let out=Object.keys(m).map(k=>m[k]);var T=resetEpoch();if(T)out=out.filter(function(x){return timeOf(x)>=T;});out.sort((x,y)=>(x.created||0)-(y.created||0));return JSON.stringify(out);}catch(e){return b||a;}}
 function pushDoc(k,v){if(!fbDb)return;fbDb.collection("ccs_"+fbShop()).doc(encodeURIComponent(k)).set({v:v,u:Date.now()}).catch(()=>{});}
 function cloudInit(){
@@ -473,6 +480,31 @@ function rmFu(i){pendingFu.splice(i,1);renderFuChips()}
 // ---- video ----
 let pendingWVideo=null;let pendingWInvoice=null;
 function getWalkins(){try{return JSON.parse(localStorage.getItem("ccs_walkins")||"[]");}catch(e){return[];}}
+function getSiteVisits(){try{return JSON.parse(localStorage.getItem("ccs_sitevisits")||"[]");}catch(e){return[];}}
+function siteVisit(type){
+  var cust=(document.getElementById("sv_cust").value||"").trim();
+  var phone=(document.getElementById("sv_phone").value||"").trim();
+  var staff=(document.getElementById("sv_staff")||{}).value||getStaff()[0];
+  if(!cust)return toast("Enter customer name","err");
+  if(!phone)return toast("Customer contact is required to send the OTP","err");
+  if(!getAtt().some(function(x){return x.date===todayStr()&&x.staff===staff&&x.type==="in";}))return toast(staff+" must Check in (Attendance) first.","err");
+  var otp=(""+Math.floor(100000+Math.random()*900000));
+  toast("Sending OTP to the customer.","ok");
+  sendOtp(phone,otp).then(function(){
+    var ent=prompt("Ask the customer ("+phone+") for the OTP sent to their WhatsApp to confirm site "+(type==="in"?"CHECK-IN":"CHECK-OUT")+":");
+    if(ent==null)return;
+    if((ent||"").trim()!==otp)return toast("Wrong customer OTP - site "+(type==="in"?"check-in":"check-out")+" not recorded","err");
+    var rec={id:"sv"+Date.now(),date:todayStr(),staff:staff,cust:cust,phone:phone,type:type,time:new Date().toTimeString().slice(0,5),ts:Date.now(),lat:"",lng:""};
+    var finish=function(){var V=getSiteVisits();V.push(rec);localStorage.setItem("ccs_sitevisits",JSON.stringify(V));toast("Site "+(type==="in"?"check-in":"check-out")+" recorded for "+cust,"ok");if(type==="out"){document.getElementById("sv_cust").value="";document.getElementById("sv_phone").value="";}renderSiteVisits();};
+    if(navigator.geolocation){navigator.geolocation.getCurrentPosition(function(p){rec.lat=p.coords.latitude.toFixed(5);rec.lng=p.coords.longitude.toFixed(5);finish();},function(){finish();},{enableHighAccuracy:true,timeout:8000});}else{finish();}
+  });
+}
+function renderSiteVisits(){
+  var box=document.getElementById("svToday");if(!box)return;
+  var V=getSiteVisits().filter(function(x){return x.date===todayStr();});
+  if(!V.length){box.textContent="No site visits recorded today.";return;}
+  box.innerHTML=V.slice().reverse().map(function(x){return "<b>"+x.cust+"</b> "+(x.type==="in"?"checked in":"checked out")+" "+x.time+(x.lat?(" - 📍"+x.lat+","+x.lng):"");}).join("<br>");
+}
 function onWVideo(ev){var f=ev.target.files[0];if(!f)return;pendingWVideo=f;document.getElementById("wVideoState").innerHTML="🎥 Video attached: "+f.name;}
 function onWInvoice(ev){var f=ev.target.files[0];if(!f)return;pendingWInvoice=f;document.getElementById("wInvState").innerHTML="🧾 Invoice photo attached: "+f.name;}
 function exportWalkins(){var W=getWalkins();if(!W.length)return toast("No walk-in data yet","err");var esc=function(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"';};var head=["Date","Customer","Contact","Staff","Amount","Material/Items","ColourCodes/Shades","GoogleReview","Video","InvoicePhoto","Remarks"];var rows=W.map(function(r){return [r.date,r.cust,r.phone,r.staff,r.amount,r.items,(r.colors||(r.shades||[]).map(function(x){return [x.area,x.product,x.shade].filter(Boolean).join(" ");}).join("; ")),r.rev,r.video,(r.invoice||"N"),r.rem].map(esc).join(",");});var csv=[head.join(",")].concat(rows).join("\n");var url=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));var a=document.createElement("a");a.href=url;a.download="CCS_Counter_walkins_"+todayStr()+".csv";a.click();toast("Counter data exported","ok");}
@@ -1019,7 +1051,7 @@ function renderAttDash(){const box=document.getElementById("attDash");if(!box)re
 function setStoreLoc(){if(!navigator.geolocation)return toast("No GPS on this device","err");toast("Capturing store location…","ok");navigator.geolocation.getCurrentPosition(p=>{const s=getSettings();s.shop=s.shop||{};s.shop.lat=p.coords.latitude.toFixed(6);s.shop.lng=p.coords.longitude.toFixed(6);localStorage.setItem("ccs_settings",JSON.stringify(s));toast("Store location saved","ok");renderSettings();},e=>toast("Failed: "+e.message,"err"),{enableHighAccuracy:true,timeout:10000});}
 function fillSelect(id,arr){const el=document.getElementById(id);if(el)el.innerHTML=arr.map(x=>`<option>${x}</option>`).join("")}
 function addProductQuick(){const name=prompt("New product name:");if(!name||!name.trim())return;const sc=getScheme();const list=(sc.products&&sc.products.length?sc.products:PRODUCTS).slice();if(list.indexOf(name.trim())<0)list.push(name.trim());sc.products=list;localStorage.setItem(SKEY,JSON.stringify(sc));toast("Added: "+name.trim(),"ok");fillSelect("f_prod",getProducts());}
-function fillStaffSelects(){const st=getStaff();["f_staff","att_staff","q_staff","w_staff"].forEach(id=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;fillSelect(id,st);if(cur&&st.indexOf(cur)>=0)el.value=cur;});var fb=document.getElementById("f_by");if(fb){var cur=fb.value;fillSelect("f_by",st.concat(["Owner"]));if(cur)fb.value=cur;}}
+function fillStaffSelects(){const st=getStaff();["f_staff","att_staff","q_staff","w_staff","sv_staff"].forEach(id=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;fillSelect(id,st);if(cur&&st.indexOf(cur)>=0)el.value=cur;});var fb=document.getElementById("f_by");if(fb){var cur=fb.value;fillSelect("f_by",st.concat(["Owner"]));if(cur)fb.value=cur;}}
 idb.open();
 fillStaffSelects();fillSelect("f_prod",getProducts());renderAttToday();
 document.getElementById("f_date").value=todayStr();
