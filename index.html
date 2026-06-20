@@ -487,7 +487,6 @@ function siteVisit(type){
   var staff=(document.getElementById("sv_staff")||{}).value||getStaff()[0];
   if(!cust)return toast("Enter customer name","err");
   if(!phone)return toast("Customer contact is required to send the OTP","err");
-  if(!getAtt().some(function(x){return x.date===todayStr()&&x.staff===staff&&x.type==="in";}))return toast(staff+" must Check in (Attendance) first.","err");
   var otp=(""+Math.floor(100000+Math.random()*900000));
   toast("Sending OTP to the customer.","ok");
   sendOtp(phone,otp).then(function(){
