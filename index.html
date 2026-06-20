@@ -431,7 +431,7 @@ function show(v){
 }
 function getPin(){return localStorage.getItem("ccs_pin")||"1234";}
 function changePin(){const cur=prompt("Enter current owner PIN:");if(cur!==getPin())return toast("Wrong PIN","err");const np=prompt("New PIN (digits):");if(np&&np.trim()){localStorage.setItem("ccs_pin",np.trim());toast("Owner PIN updated","ok");}}
-function applyRoleVisibility(){document.querySelectorAll(".owner-only").forEach(el=>el.style.display=(role==="Owner"?"":"none"));}
+function applyRoleVisibility(){document.querySelectorAll(".owner-only").forEach(el=>el.style.display=(role==="Owner"?"":"none"));var tb=document.getElementById("n-targets");if(tb){var hideTgt=(role!=="Owner"&&todayStr()<"2026-07-01");tb.style.display=hideTgt?"none":"";}}
 function toggleRole(){
   if(role==="Staff"){const p=prompt("Enter Owner PIN (default 1234):");if(p===null)return;if(p!==getPin()){toast("Wrong PIN — owner access denied","err");return;}role="Owner";}
   else{role="Staff";}
@@ -489,7 +489,7 @@ function siteVisit(type){
   if(!phone)return toast("Customer contact is required to send the OTP","err");
   var otp=(""+Math.floor(100000+Math.random()*900000));
   toast("Sending OTP to the customer.","ok");
-  sendOtp(phone,otp).then(function(){
+  sendOtp(phone,otp,staff).then(function(){
     var ent=prompt("Ask the customer ("+phone+") for the OTP sent to their WhatsApp to confirm site "+(type==="in"?"CHECK-IN":"CHECK-OUT")+":");
     if(ent==null)return;
     if((ent||"").trim()!==otp)return toast("Wrong customer OTP - site "+(type==="in"?"check-in":"check-out")+" not recorded","err");
@@ -574,7 +574,7 @@ function savePunch(){
   }
   if(R.visitOtp&&!window._visitOtpOk){
     var _otp=(""+Math.floor(100000+Math.random()*900000));
-    sendOtp(e.phone,_otp).then(function(){
+    sendOtp(e.phone,_otp,(e.by&&e.by!=="Owner"?e.by:e.staff)).then(function(){
       var _en=prompt("Site-visit OTP — ask the customer ("+e.phone+") for the code sent to their phone to verify this visit:");
       if(_en==null)return;
       if((_en||"").trim()!==_otp)return toast("Wrong customer OTP — visit not logged","err");
@@ -1022,8 +1022,8 @@ function rejectPay(id){if(role!=="Owner")return toast("Owner only","err");const 
 function getAtt(){try{return JSON.parse(localStorage.getItem("ccs_att")||"[]");}catch(e){return[];}}
 function nearestCustomer(lat,lng){let best=null;load().forEach(e=>{if(e.lat&&e.lng){const d=distM(+e.lat,+e.lng,+lat,+lng);if(d<=250&&(!best||d<best.dist))best={name:e.cust||"site",dist:d};}});return best;}
 function smsCfg(){return getSettings().sms||{};}
-function sendOtp(phone,otp){var c=smsCfg();
-  if(c.relay&&phone){return fetch(c.relay,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mobile:(""+phone),otp:otp,secret:c.secret||""})}).then(function(r){if(!r.ok)throw 0;return true;}).catch(function(){alert("Could not reach the WhatsApp relay. OTP for manual entry: "+otp);return true;});}
+function sendOtp(phone,otp,staff){var c=smsCfg();
+  if(c.relay&&phone){return fetch(c.relay,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mobile:(""+phone),otp:otp,staff:(staff||""),secret:c.secret||""})}).then(function(r){if(!r.ok)throw 0;return true;}).catch(function(){alert("Could not reach the WhatsApp relay. OTP for manual entry: "+otp);return true;});}
   if(c.key&&phone){var url=(c.url||"https://control.msg91.com/api/v5/otp")+"?authkey="+encodeURIComponent(c.key)+"&template_id="+encodeURIComponent(c.tpl||"")+"&mobile=91"+encodeURIComponent(phone)+"&otp="+otp+(c.sender?("&sender="+encodeURIComponent(c.sender)):"");return fetch(url,{method:"GET"}).then(function(){return true;}).catch(function(){alert("Could not reach the SMS gateway from the browser. OTP for manual entry: "+otp);return true;});}
   alert("OTP (test mode — no WhatsApp relay / SMS gateway set in Setup):  "+otp+"\n\nOwner: add your WhatsApp relay URL under Setup → WhatsApp / SMS OTP to send real codes.");return Promise.resolve(true);}
 let pendingOtp=null;
