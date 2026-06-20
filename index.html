@@ -502,7 +502,7 @@ function siteVisit(type){
     var rec={id:"sv"+Date.now(),date:todayStr(),staff:staff,cust:cust,phone:phone,type:type,time:new Date().toTimeString().slice(0,5),ts:Date.now(),lat:"",lng:""};
     if(type==="out"&&inRec){rec.inId=inRec.id;rec.inLat=inRec.lat;rec.inLng=inRec.lng;}
     var finish=function(){
-      if(type==="out"&&inRec){if(inRec.lat&&inRec.lng&&rec.lat&&rec.lng){var dm=distM(+inRec.lat,+inRec.lng,+rec.lat,+rec.lng);rec.matchM=Math.round(dm);rec.locMatch=(dm<=300);}else{rec.locMatch=null;}}
+      if(type==="out"&&inRec){if(inRec.lat&&inRec.lng&&rec.lat&&rec.lng){var dm=distM(+inRec.lat,+inRec.lng,+rec.lat,+rec.lng);rec.matchM=Math.round(dm);rec.locMatch=(dm<=50);}else{rec.locMatch=null;}}
       var V=getSiteVisits();V.push(rec);localStorage.setItem("ccs_sitevisits",JSON.stringify(V));
       var msg="Site "+(type==="in"?"check-in":"check-out")+" recorded for "+cust;
       if(type==="out"){msg+=(rec.locMatch===false)?(" \u26a0 location differs from check-in ("+rec.matchM+"m) - NOT counted"):" \u2713 visit counted";}
