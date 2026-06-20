@@ -489,6 +489,10 @@ function siteVisit(type){
   if(!cust)return toast("Enter customer name","err");
   if(!phone)return toast("Customer contact is required to send the OTP","err");
   if(isStaffNumber(phone))return toast("That is a staff number - enter the CUSTOMER mobile","err");
+  var nrm=function(p){return (""+(p||"")).replace(/[^0-9]/g,"").slice(-10);};
+  var V0=getSiteVisits();var sameT=function(t){return V0.filter(function(x){return x.date===todayStr()&&x.staff===staff&&nrm(x.phone)===nrm(phone)&&x.type===t;});};
+  var inRec=null;
+  if(type==="out"){var ins=sameT("in"),outs=sameT("out");if(ins.length<=outs.length)return toast("No open site check-in for this customer today - check in first","err");inRec=ins[ins.length-1];}
   var otp=(""+Math.floor(100000+Math.random()*900000));
   toast("Sending OTP to the customer.","ok");
   sendOtp(phone,otp,staff).then(function(){
@@ -496,7 +500,16 @@ function siteVisit(type){
     if(ent==null)return;
     if((ent||"").trim()!==otp)return toast("Wrong customer OTP - site "+(type==="in"?"check-in":"check-out")+" not recorded","err");
     var rec={id:"sv"+Date.now(),date:todayStr(),staff:staff,cust:cust,phone:phone,type:type,time:new Date().toTimeString().slice(0,5),ts:Date.now(),lat:"",lng:""};
-    var finish=function(){var V=getSiteVisits();V.push(rec);localStorage.setItem("ccs_sitevisits",JSON.stringify(V));toast("Site "+(type==="in"?"check-in":"check-out")+" recorded for "+cust,"ok");if(type==="out"){document.getElementById("sv_cust").value="";document.getElementById("sv_phone").value="";}renderSiteVisits();};
+    if(type==="out"&&inRec){rec.inId=inRec.id;rec.inLat=inRec.lat;rec.inLng=inRec.lng;}
+    var finish=function(){
+      if(type==="out"&&inRec){if(inRec.lat&&inRec.lng&&rec.lat&&rec.lng){var dm=distM(+inRec.lat,+inRec.lng,+rec.lat,+rec.lng);rec.matchM=Math.round(dm);rec.locMatch=(dm<=300);}else{rec.locMatch=null;}}
+      var V=getSiteVisits();V.push(rec);localStorage.setItem("ccs_sitevisits",JSON.stringify(V));
+      var msg="Site "+(type==="in"?"check-in":"check-out")+" recorded for "+cust;
+      if(type==="out"){msg+=(rec.locMatch===false)?(" \u26a0 location differs from check-in ("+rec.matchM+"m) - NOT counted"):" \u2713 visit counted";}
+      toast(msg,(rec.locMatch===false)?"err":"ok");
+      if(type==="out"){document.getElementById("sv_cust").value="";document.getElementById("sv_phone").value="";}
+      renderSiteVisits();try{if(typeof renderSiteDash==="function")renderSiteDash();}catch(e){}
+    };
     if(navigator.geolocation){navigator.geolocation.getCurrentPosition(function(p){rec.lat=p.coords.latitude.toFixed(5);rec.lng=p.coords.longitude.toFixed(5);finish();},function(){finish();},{enableHighAccuracy:true,timeout:8000});}else{finish();}
   });
 }
@@ -712,8 +725,9 @@ function renderSiteDash(){
   var V=getSiteVisits().filter(function(x){return x.date===d;});
   if(!V.length){box.innerHTML='<p class="note">No site visits on this date.</p>';return;}
   var g={};V.forEach(function(x){var k=(x.cust||"")+"|"+(x.staff||"")+"|"+(x.phone||"");g[k]=g[k]||{cust:x.cust,staff:x.staff,phone:x.phone};if(x.type==="in"&&!g[k].in)g[k].in=x;if(x.type==="out")g[k].out=x;});
-  var rowsH=Object.keys(g).map(function(k){var r=g[k];var inT=r.in?r.in.time:"\u2014";var outT=r.out?r.out.time:"\u26a0 no out";var hrs=(r.in&&r.out)?(((r.out.ts-r.in.ts)/3600000).toFixed(1)):"\u2014";var loc=(r.in&&r.in.lat)?("📍"+r.in.lat+","+r.in.lng):"";return '<tr><td class="l">'+(r.cust||"\u2014")+'<br><span class="note">'+(r.phone||"")+'</span></td><td class="l">'+(r.staff||"")+'</td><td>'+inT+'</td><td style="'+((r.in&&!r.out)?"color:var(--red);font-weight:700":"")+'">'+outT+'</td><td>'+hrs+'</td><td class="l">'+loc+'</td></tr>';}).join("");
-  box.innerHTML='<div style="overflow-x:auto"><table><tr><th class="l">Customer</th><th class="l">Staff</th><th>In</th><th>Out</th><th>Hrs</th><th class="l">Location</th></tr>'+rowsH+'</table></div>';
+  var counted=0;
+  var rowsH=Object.keys(g).map(function(k){var r=g[k];var inT=r.in?r.in.time:"\u2014";var outT=r.out?r.out.time:"\u26a0 no out";var hrs=(r.in&&r.out)?(((r.out.ts-r.in.ts)/3600000).toFixed(1)):"\u2014";var loc=(r.in&&r.in.lat)?("📍"+r.in.lat+","+r.in.lng):"";var st,ok=false;if(!r.out){st='<span style="color:var(--red)">\u23f3 no check-out</span>';}else if(r.out.locMatch===false){st='<span style="color:var(--red)">\u26a0 loc mismatch '+(r.out.matchM||"")+'m</span>';}else{st='\u2713 counted';ok=true;}if(ok)counted++;return '<tr><td class="l">'+(r.cust||"\u2014")+'<br><span class="note">'+(r.phone||"")+'</span></td><td class="l">'+(r.staff||"")+'</td><td>'+inT+'</td><td style="'+((r.in&&!r.out)?"color:var(--red);font-weight:700":"")+'">'+outT+'</td><td>'+hrs+'</td><td class="l">'+loc+'</td><td>'+st+'</td></tr>';}).join("");
+  box.innerHTML='<p class="note">Counted visits (check-in + check-out + matching location): <b>'+counted+'</b></p><div style="overflow-x:auto"><table><tr><th class="l">Customer</th><th class="l">Staff</th><th>In</th><th>Out</th><th>Hrs</th><th class="l">Location</th><th>Status</th></tr>'+rowsH+'</table></div>';
 }
 function renderDash(){
   const d=document.getElementById("d_date").value||todayStr(),rows=dayData(d);
