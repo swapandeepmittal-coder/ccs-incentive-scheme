@@ -240,6 +240,7 @@
   <div class="card"><h2 id="incTitle">💰 Incentive &amp; points (this quarter)</h2>
     <div style="overflow-x:auto"><table id="inc"></table></div>
   </div>
+  <div class="card owner-only"><h2>📑 Earnings report — monthly &amp; quarterly</h2><p class="note">Per-staff business generated, points, gift, cash incentive and total earning. Pick a month; the quarter total is shown below it.</p><label>Month</label><input type="month" id="rep_month" onchange="renderReport()"><div class="small-actions" style="margin:6px 0"><button class="btn ghost sm" onclick="exportReport()">📊 Download report (Excel)</button></div><div id="reportBox"></div></div>
 </section>
 
 <!-- TARGETS + SCHEME -->
@@ -380,7 +381,7 @@ const DEFAULT_SHOP="ccs1";
 function fbCfg(){try{const s=localStorage.getItem("ccs_fb");return s?JSON.parse(s):DEFAULT_FB;}catch(e){return DEFAULT_FB;}}
 function fbShop(){return (localStorage.getItem("ccs_shop")||DEFAULT_SHOP).toLowerCase();}
 function cloudStatus(msg,ok){const el=document.getElementById("fbStatus");if(el){el.textContent=msg;el.style.color=ok?"#166534":"#c0392b";}}
-function refreshAll(){try{applyReset();}catch(e){}try{fillStaffSelects();}catch(e){}try{["f_date","w_date","q_date"].forEach(function(id){var el=document.getElementById(id);if(el&&!el.value)el.value=todayStr();});}catch(e){}try{renderRecent();}catch(e){}try{renderAttToday();}catch(e){}try{renderSiteVisits();}catch(e){}const vis=id=>{const el=document.getElementById(id);return el&&!el.classList.contains("hide");};try{if(vis("view-dash"))renderDash();if(vis("view-team"))renderTeam();if(vis("view-targets"))renderTargets();if(vis("view-quote"))renderQuoteRecent();if(vis("view-settings"))renderSettings();}catch(e){}}
+function refreshAll(){try{applyReset();}catch(e){}try{fillStaffSelects();}catch(e){}try{["f_date","w_date","q_date"].forEach(function(id){var el=document.getElementById(id);if(el&&!el.value)el.value=todayStr();});}catch(e){}try{renderRecent();}catch(e){}try{renderAttToday();}catch(e){}try{renderSiteVisits();}catch(e){}const vis=id=>{const el=document.getElementById(id);return el&&!el.classList.contains("hide");};try{if(vis("view-dash"))renderDash();if(vis("view-team")){renderTeam();try{renderReport();}catch(e){}}if(vis("view-targets"))renderTargets();if(vis("view-quote"))renderQuoteRecent();if(vis("view-settings"))renderSettings();}catch(e){}}
 function mergeById(a,b){try{const A=JSON.parse(a||"[]"),B=JSON.parse(b||"[]");if(!Array.isArray(A)||!Array.isArray(B))return b;const m={};A.concat(B).forEach(x=>{if(!x||x.id==null)return;const ex=m[x.id];if(!ex){m[x.id]=x;}else if(x.deleted||ex.deleted){m[x.id]=(x.deleted?x:ex);m[x.id].deleted=true;}else{m[x.id]=((x.created||0)>=(ex.created||0))?x:ex;}});let out=Object.keys(m).map(k=>m[k]);var T=resetEpoch();if(T)out=out.filter(function(x){return timeOf(x)>=T;});out.sort((x,y)=>(x.created||0)-(y.created||0));return JSON.stringify(out);}catch(e){return b||a;}}
 function pushDoc(k,v){if(!fbDb)return;fbDb.collection("ccs_"+fbShop()).doc(encodeURIComponent(k)).set({v:v,u:Date.now()}).catch(()=>{});}
 function cloudInit(){
@@ -782,6 +783,44 @@ function renderTeam(){
     inc.map((x,i)=>`<tr><td class="l"><b>${i===0&&x.total>0?"🥇 ":""}${x.s}</b></td><td>${x.pts}</td><td>${x.locked?"🔒 locked":fmt(x.ptsCash)}</td><td>${fmt(x.cat)}</td><td><b>${fmt(x.total)}</b></td><td>${x.left>0?fmt(x.left):"✓ reached"}</td></tr>`).join("");
 }
 
+function earnFor(rows,s,sc){
+  var ap=sc.actpoints||{},cm=sc.convM||{},flat=(sc.convFlat!=null?sc.convFlat:0),pv=(sc.pointValue!=null?sc.pointValue:0.1);
+  var r=rows.filter(function(e){return e.staff===s;});
+  var rp=r.filter(function(e){return e.status!=="Lost"&&e.status!=="Rejected";});
+  var biz=r.reduce(function(a,e){return a+(+e.sale||0);},0);
+  var cash=0;getProducts().forEach(function(p){var val=rp.filter(function(e){return e.prod===p;}).reduce(function(a,e){return a+(+e.sale||0);},0);cash+=val*(((sc.rate&&sc.rate[p])||0)/100);});
+  var fud=rp.reduce(function(a,e){return a+((e.followups||[]).filter(function(x){return x.done;}).length);},0);
+  var pts=rp.filter(function(e){return e.act==="Sale Closed";}).length*(ap.sale||0)+rp.filter(function(e){return e.rev==="Y";}).length*((ap.greview!=null?ap.greview:(ap.review||0)))+rp.filter(function(e){return e.video==="Y";}).length*(ap.video||0)+rp.filter(function(e){return e.loc==="Y";}).length*(ap.location||0)+fud*(ap.followup||0)+rp.filter(function(e){return e.act==="Walk-in";}).length*(ap.walkin||0);
+  rp.filter(function(e){return e.act==="Sale Closed"&&(e.by||"Staff")!=="Owner";}).forEach(function(e){var m=cm[e.prod]||{};pts+=(m[e.src||"Other"]||0)+flat;});
+  var gift=Math.round(pts*pv);
+  return {biz:Math.round(biz),cash:Math.round(cash),pts:Math.round(pts),gift:gift,total:Math.round(cash+gift),sales:r.filter(function(e){return e.act==="Sale Closed";}).length};
+}
+function reportRows(){
+  var sc=getScheme();var mm=(document.getElementById("rep_month")||{}).value||todayStr().slice(0,7);
+  var monthRows=load().filter(function(e){return (e.date||"").slice(0,7)===mm;});
+  var qr=quarterRange();var qRows=load().filter(function(e){return (e.date||"")>=qr.start&&(e.date||"")<=qr.end;});
+  return {sc:sc,mm:mm,monthRows:monthRows,qRows:qRows};
+}
+function renderReport(){
+  var box=document.getElementById("reportBox");if(!box)return;
+  var rmEl=document.getElementById("rep_month");if(rmEl&&!rmEl.value)rmEl.value=todayStr().slice(0,7);
+  var R=reportRows();var staff=getStaff();
+  function tbl(rows,title){
+    var tb=0,te=0;
+    var body=staff.map(function(s){var x=earnFor(rows,s,R.sc);tb+=x.biz;te+=x.total;return '<tr><td class="l">'+s+'</td><td>'+fmt(x.biz)+'</td><td>'+x.sales+'</td><td>'+x.pts+'</td><td>'+fmt(x.cash)+'</td><td>'+fmt(x.gift)+'</td><td><b>'+fmt(x.total)+'</b></td></tr>';}).join("");
+    return '<h3 style="margin-top:12px">'+title+'</h3><div style="overflow-x:auto"><table><tr><th class="l">Staff</th><th>Business</th><th>Sales</th><th>Points</th><th>Cash incentive</th><th>Gift value</th><th>Total earning</th></tr>'+body+'<tr><td class="l"><b>Business generated (total)</b></td><td><b>'+fmt(tb)+'</b></td><td colspan="4"></td><td><b>'+fmt(te)+'</b></td></tr></table></div>';
+  }
+  box.innerHTML=tbl(R.monthRows,"Month — "+R.mm)+tbl(R.qRows,"Quarter — "+quarterLabel());
+}
+function exportReport(){
+  var R=reportRows();var staff=getStaff();var esc=function(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"';};
+  var head=["Period","Staff","BusinessGenerated","Sales","Points","CashIncentive","GiftValue","TotalEarning"];
+  var out=[];
+  staff.forEach(function(s){var m=earnFor(R.monthRows,s,R.sc);out.push(["Month "+R.mm,s,m.biz,m.sales,m.pts,m.cash,m.gift,m.total].map(esc).join(","));});
+  staff.forEach(function(s){var q=earnFor(R.qRows,s,R.sc);out.push(["Quarter "+quarterLabel(),s,q.biz,q.sales,q.pts,q.cash,q.gift,q.total].map(esc).join(","));});
+  var csv=[head.join(",")].concat(out).join("\n");
+  var url=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));var a=document.createElement("a");a.href=url;a.download="CCS_earnings_report_"+R.mm+".csv";a.click();toast("Report exported","ok");
+}
 function renderTargets(){
   const mi=document.getElementById("tgt_month");if(mi&&!mi.value)mi.value=todayStr().slice(0,7);
   const mm=(mi&&mi.value)||todayStr().slice(0,7);
